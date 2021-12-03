@@ -1,6 +1,8 @@
 #ifndef HQPLANNER_CARTESIAN_FRENET_CONVERSION_H_
 #define HQPLANNER_CARTESIAN_FRENET_CONVERSION_H_
 
+#include <assert.h>
+
 #include <array>
 #include <cmath>
 
@@ -149,11 +151,8 @@ void CartesianFrenetConverter::frenet_to_cartesian(
     const std::array<double, 3>& d_condition, double* const ptr_x,
     double* const ptr_y, double* const ptr_theta, double* const ptr_kappa,
     double* const ptr_v, double* const ptr_a) {
-  if (std::abs(rs - s_condition[0]) >= 1.0e-6) {
-    // ROS_INFO();
-  }
-  //   CHECK(std::abs(rs - s_condition[0]) < 1.0e-6)
-  //       << "The reference point s and s_condition[0] don't match";
+  assert(std::abs(rs - s_condition[0]) < 1.0e-6);
+  //当表达式为false，中止程序的执行，并显示中断执行所在文件和程序行
 
   const double cos_theta_r = std::cos(rtheta);
   const double sin_theta_r = std::sin(rtheta);
@@ -235,8 +234,9 @@ double CartesianFrenetConverter::CalculateSecondOrderLateralDerivative(
   const double res = -(rdkappa * l + rkappa * dl) * std::tan(theta - rtheta) +
                      (1 - rkappa * l) / (cos_theta_diff * cos_theta_diff) *
                          (kappa * (1 - rkappa * l) / cos_theta_diff - rkappa);
+
   if (std::isinf(res)) {
-    //   ROS_INFO();
+    //   ROS_INFO("result is inf when calculate second order lateral ");
     // AWARN << "result is inf when calculate second order lateral "
     //          "derivative. input values are rtheta:"
     //       << rtheta << " theta: " << theta << ", rkappa: " << rkappa

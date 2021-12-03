@@ -1,8 +1,8 @@
 #ifndef HQPLANNER_FRAME_H_
 #define HQPLANNER_FRAME_H_
-#include <fsd_common_msgs/CarState.h>
-#include <fsd_common_msgs/CarStateDt.h>
-#include <fsd_common_msgs/TrajectoryPoint.h>
+// #include <fsd_common_msgs/CarState.h>
+// #include <fsd_common_msgs/CarStateDt.h>
+// #include <fsd_common_msgs/TrajectoryPoint.h>
 
 #include <cstdint>
 #include <list>
@@ -10,14 +10,23 @@
 #include <string>
 #include <vector>
 
-#include "hqplanner/for_proto/pnc_point.h"
-#include "hqplanner/for_proto/vehicle_state.h"
+#include "for_proto/pnc_point.h"
+#include "for_proto/vehicle_state.h"
+#include "reference_line.h"
 class Frame {
  public:
+  Frame() = default;
   explicit Frame(uint32_t sequence_num,
                  const TrajectoryPoint &planning_start_point,
                  const double start_time, const VehicleSstate &vehicle_state,
                  ReferenceLineProvider *reference_line_provider);
+
+ private:
+  VehicleState vehicle_state_;
+  uint32_t sequence_num_;
+  TrajectoryPoint planning_start_point_;
+  double start_time_;
+  std::list<ReferenceLine>
 };
 
 #endif

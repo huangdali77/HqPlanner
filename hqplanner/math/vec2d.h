@@ -1,9 +1,11 @@
-#ifndef HQPLANNER_VEC2D_H_
-#define HQPLANNER_VEC2D_H_
+#ifndef HQPLANNER_MATH_VEC2D_H_
+#define HQPLANNER_MATH_VEC2D_H_
 
 #include <cmath>
 #include <string>
 
+namespace hqplanner {
+namespace math {
 constexpr double kMathEpsilon = 1e-10;
 
 /**
@@ -190,5 +192,7 @@ bool Vec2d::operator==(const Vec2d &other) const {
 }
 
 Vec2d operator*(const double ratio, const Vec2d &vec) { return vec * ratio; }
+}  // namespace math
+}  // namespace hqplanner
 
 #endif

@@ -62,7 +62,7 @@ ReferenceLine::ReferenceLine(const std::vector<double>& x,
   AccumulateOnS();
   anchor_points_x_s_ = CubicSpline(anchor_points_s_, anchor_points_x_);
   anchor_points_y_s_ = CubicSpline(anchor_points_s_, anchor_points_y_);
-  ConstructReferenceLineByFixedStep();  //仅供输出打印参考线所用
+  ConstructReferenceLineByFixedStep();  //供寻找最近点使用
 }
 
 void ReferenceLine::AccumulateOnS() {
