@@ -6,6 +6,9 @@
 #include <algorithm>
 #include <eigen3/Eigen/Dense>
 #include <vector>
+
+namespace hqplanner {
+namespace math {
 using namespace Eigen;
 
 class CubicSpline {
@@ -154,5 +157,7 @@ double CubicSpline::GetSplinePointThirdDerivativeValue(double t) {
   double result = 6.0 * spline_coefs_d_[index_i];
   return result;
 }
+}  // namespace math
+}  // namespace hqplanner
 
 #endif

@@ -1,4 +1,10 @@
+#ifndef HQPLANNER_FOR_PROTO_PNC_POINT_H_
+#define HQPLANNER_FOR_PROTO_PNC_POINT_H_
+
 #include <string>
+
+namespace hqplanner {
+namespace forproto {
 struct PathPoint {
   // coordinates
   double x;
@@ -60,3 +66,7 @@ struct ReferencePoint {
   double curvature;
   double d_curvature;
 };
+}  // namespace forproto
+}  // namespace hqplanner
+
+#endif

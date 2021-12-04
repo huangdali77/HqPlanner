@@ -6,8 +6,10 @@
 #include <array>
 #include <cmath>
 
+#include "math_utils.h"
 #include "vec2d.h"
-
+namespace hqplanner {
+namespace math {
 // Notations:
 // s_condition = [s, s_dot, s_ddot]
 // s: longitudinal coordinate w.r.t reference line.
@@ -79,7 +81,7 @@ class CartesianFrenetConverter {
       const double theta_ref, const double theta, const double kappa_ref,
       const double kappa, const double dkappa_ref, const double l);
 
-  static double NormalizeAngle(const double angle);
+  // static double NormalizeAngle(const double angle);
 };
 
 // ================================函数实现============================
@@ -246,11 +248,7 @@ double CartesianFrenetConverter::CalculateSecondOrderLateralDerivative(
   return res;
 }
 
-double CartesianFrenetConverter::NormalizeAngle(const double angle) {
-  double a = std::fmod(angle + M_PI, 2.0 * M_PI);
-  if (a < 0.0) {
-    a += (2.0 * M_PI);
-  }
-  return a - M_PI;
-}
+}  // namespace math
+}  // namespace hqplanner
+
 #endif

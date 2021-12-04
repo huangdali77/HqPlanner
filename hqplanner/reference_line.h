@@ -7,8 +7,13 @@
 
 // #include "hqplanner/cubic_spline_2d.h"
 // #include "hqplanner/for_proto/pnc_point.h"
-#include "cubic_spline.h"
 #include "for_proto/pnc_point.h"
+#include "math/cubic_spline.h"
+
+namespace hqplanner {
+using hqplanner::forproto::AnchorPoint;
+using hqplanner::forproto::ReferencePoint;
+using hqplanner::math::CubicSpline;
 
 double REFERENCE_LINE_SAMPLE_STEP = 0.1;
 
@@ -228,5 +233,6 @@ void ReferenceLine::ConstructReferenceLineByFixedStep() {
 //   reference_line_points_.back().d_curvature =
 //       reference_line_points_[reference_line_points_.size() - 2].d_curvature;
 // }
+}  // namespace hqplanner
 
 #endif

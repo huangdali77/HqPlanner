@@ -1,6 +1,7 @@
-#ifndef HQPLANNER_CLASSFORPROTO_VEHICLESTATE_H_
-#define HQPLANNER_CLASSFORPROTO_VEHICLESTATE_H_
-
+#ifndef HQPLANNER_FORPROTO_VEHICLESTATE_H_
+#define HQPLANNER_FORPROTO_VEHICLESTATE_H_
+namespace hqplanner {
+namespace forproto {
 class VehicleState {
  public:
   void SetX(double x) { x_ = x; }
@@ -66,5 +67,7 @@ class VehicleState {
   // timestamp
   double time_stamp_;
 };
+}  // namespace forproto
+}  // namespace hqplanner
 
 #endif

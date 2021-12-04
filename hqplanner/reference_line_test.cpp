@@ -5,6 +5,9 @@
 #include <cmath>
 #include <iostream>
 #include <vector>
+using hqplanner::ReferenceLine;
+using hqplanner::forproto::AnchorPoint;
+using hqplanner::forproto::ReferencePoint;
 int main() {
   std::vector<double> x = {
       92.2679315918, 91.7368744032, 91.2058172146, 90.6747600259, 90.1217327927,
@@ -66,23 +69,23 @@ int main() {
   //        m * abs(reference_line_points[i + 1].y) + c);
   // }
 
-  // //   偏航角
-  // double m = 5, c = 300, b = 100;
-  // for (int i = 0; i < reference_line_points.size() - 1; ++i) {
-  //   line(m * reference_line_points[i].s + b,
-  //        m * (reference_line_points[i].yaw) + c,
-  //        m * reference_line_points[i + 1].s + b,
-  //        m * (reference_line_points[i + 1].yaw) + c);
-  // }
-  // line(0, c, 640, c);
-
-  double m = 5, c = 200, b = 200;
+  //   偏航角
+  double m = 5, c = 300, b = 100;
   for (int i = 0; i < reference_line_points.size() - 1; ++i) {
     line(m * reference_line_points[i].s + b,
-         m * (reference_line_points[i].curvature) + c,
+         m * (reference_line_points[i].yaw) + c,
          m * reference_line_points[i + 1].s + b,
-         m * (reference_line_points[i + 1].curvature) + c);
+         m * (reference_line_points[i + 1].yaw) + c);
   }
+  line(0, c, 640, c);
+
+  // double m = 5, c = 200, b = 200;
+  // for (int i = 0; i < reference_line_points.size() - 1; ++i) {
+  //   line(m * reference_line_points[i].s + b,
+  //        m * (reference_line_points[i].curvature) + c,
+  //        m * reference_line_points[i + 1].s + b,
+  //        m * (reference_line_points[i + 1].curvature) + c);
+  // }
   for (int i = 0; i < reference_line_points.size(); ++i) {
     std::cout << 1 / reference_line_points[i].curvature << std::endl;
   }

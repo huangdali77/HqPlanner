@@ -1,11 +1,12 @@
-#ifndef MODULES_PLANNING_COMMON_OBSTACLE_H_
-#define MODULES_PLANNING_COMMON_OBSTACLE_H_
+#ifndef HQPLANNER_OBSTACLE_H_
+#define HQPLANNER_OBSTACLE_H_
 
 #include <list>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "for_proto/perception_obstacle.h"
 #include "for_proto/pnc_point.h"
 #include "math/box2d.h"
 #include "math/polygon2d.h"
@@ -35,7 +36,7 @@ class Obstacle {
   const std::string &Id() const;
   void SetId(const std::string &id) { id_ = id; }
 
-  //   std::int32_t PerceptionId() const;
+  std::int32_t PerceptionId() const;
 
   double Speed() const;
 
@@ -85,7 +86,7 @@ class Obstacle {
 
  private:
   std::string id_;
-  //   std::int32_t perception_id_ = 0;
+  std::int32_t perception_id_ = 0;
   bool is_static_ = false;
   //   bool is_virtual_ = false;
   double speed_ = 0.0;
