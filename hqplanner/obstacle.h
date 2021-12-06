@@ -11,12 +11,14 @@
 #include "math/box2d.h"
 #include "math/polygon2d.h"
 #include "math/vec2d.h"
+
 // #include "modules/perception/proto/perception_obstacle.pb.h"
 // #include "modules/planning/common/indexed_list.h"
 // #include "modules/prediction/proto/prediction_obstacle.pb.h"
 
 namespace hqplanner {
-
+using hqplanner::forproto::PerceptionObstacle;
+using hqplanner::forproto::TrajectoryPoint;
 /**
  * @class Obstacle
  *
@@ -49,7 +51,7 @@ class Obstacle {
   /**
    * @brief get the perception bounding box
    */
-  //   const math::Box2d &PerceptionBoundingBox() const;
+  const math::Box2d &PerceptionBoundingBox() const;
 
   /**
    * @brief get the perception polygon for the obstacle. It is more precise than
@@ -57,7 +59,7 @@ class Obstacle {
    */
   const math::Polygon2d &PerceptionPolygon() const;
 
-  //   const prediction::Trajectory &Trajectory() const;
+  const std::vector<TrajectoryPoint> &Trajectory() const;
   //   TrajectoryPoint *AddTrajectoryPoint();
   //   bool HasTrajectory() const;
 
@@ -84,14 +86,16 @@ class Obstacle {
 
   //   static bool IsValidTrajectoryPoint(const common::TrajectoryPoint &point);
 
+  const PerceptionObstacle &Perception() const;
+
  private:
   std::string id_;
   std::int32_t perception_id_ = 0;
   bool is_static_ = false;
   //   bool is_virtual_ = false;
   double speed_ = 0.0;
-  //   prediction::Trajectory trajectory_;
-  //   perception::PerceptionObstacle perception_obstacle_;
+  std::vector<TrajectoryPoint> trajectory_;
+  PerceptionObstacle perception_obstacle_;
   math::Box2d perception_bounding_box_;
   math::Polygon2d perception_polygon_;
 };
@@ -101,6 +105,9 @@ class Obstacle {
 // ThreadSafeIndexedObstacles;
 
 // ==============================函数实现============================
+const PerceptionObstacle &Obstacle::Perception() const {
+  return perception_obstacle_;
+}
 const std::string &Obstacle::Id() const { return id_; }
 double Obstacle::Speed() const { return speed_; }
 
@@ -110,6 +117,12 @@ const math::Polygon2d &Obstacle::PerceptionPolygon() const {
   return perception_polygon_;
 }
 
+const std::vector<TrajectoryPoint> &Obstacle::Trajectory() const {
+  return trajectory_;
+}
+const math::Box2d &Obstacle::PerceptionBoundingBox() const {
+  return perception_bounding_box_;
+}
 math::Box2d Obstacle::GetBoundingBox() const {
   return perception_bounding_box_;
 }

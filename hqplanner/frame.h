@@ -13,12 +13,16 @@
 #include "for_proto/pnc_point.h"
 #include "for_proto/vehicle_state.h"
 #include "reference_line.h"
+namespace hqplanner {
+using hqplanner::forproto::TrajectoryPoint;
+using hqplanner::forproto::VehicleState;
+
 class Frame {
  public:
   Frame() = default;
   explicit Frame(uint32_t sequence_num,
                  const TrajectoryPoint &planning_start_point,
-                 const double start_time, const VehicleSstate &vehicle_state,
+                 const double start_time, const VehicleState &vehicle_state,
                  ReferenceLineProvider *reference_line_provider);
 
  private:
@@ -28,5 +32,6 @@ class Frame {
   double start_time_;
   std::list<ReferenceLine>
 };
+}  // namespace hqplanner
 
 #endif

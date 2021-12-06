@@ -59,13 +59,42 @@ struct ReferencePoint {
  public:
   ReferencePoint() = default;
   ReferencePoint(double xx, double yy, double ss) : x(xx), y(yy), s(ss) {}
+  ReferencePoint(double ss) : s(ss) {}
   double x;
   double y;
   double s;
-  double yaw;
-  double curvature;
-  double d_curvature;
+  // double yaw;
+  // double curvature;
+  // double d_curvature;
+  // ===============
+  double kappa = 0.0;
+  double dkappa = 0.0;
+  double heading = 0.0;
 };
+
+struct SLPoint {
+  double s;
+  double l;
+};
+
+struct FrenetFramePoint {
+  double s;
+  double l;
+  double dl;
+  double ddl;
+};
+
+struct SpeedPoint {
+  double s;
+  double t;
+  // speed (m/s)
+  double v;
+  // acceleration (m/s^2)
+  double a;
+  // jerk (m/s^3)
+  double da;
+};
+
 }  // namespace forproto
 }  // namespace hqplanner
 
