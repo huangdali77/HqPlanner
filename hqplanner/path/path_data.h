@@ -259,14 +259,14 @@ bool PathData::XYToSL(const DiscretizedPath &discretized_path,
   const double max_len = reference_line_->Length();
   for (const auto &path_point : discretized_path.path_points()) {
     SLPoint sl_point;
-    if (!reference_line_->XYToSL({path_point.x(), path_point.y()}, &sl_point)) {
-      AERROR << "Fail to transfer cartesian point to frenet point.";
+    if (!reference_line_->XYToSL(Vec2d(path_point.x, path_point.y),
+                                 &sl_point)) {
       return false;
     }
-    common::FrenetFramePoint frenet_point;
+    FrenetFramePoint frenet_point;
     // NOTICE: does not set dl and ddl here. Add if needed.
-    frenet_point.set_s(std::max(0.0, std::min(sl_point.s(), max_len)));
-    frenet_point.set_l(sl_point.l());
+    frenet_point.s = std::max(0.0, std::min(sl_point.s, max_len));
+    frenet_point.l = sl_point.l;
     frenet_frame_points.push_back(std::move(frenet_point));
   }
   *frenet_path = FrenetFramePath(std::move(frenet_frame_points));

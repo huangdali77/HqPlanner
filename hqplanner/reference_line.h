@@ -8,14 +8,21 @@
 // #include "hqplanner/cubic_spline_2d.h"
 // #include "hqplanner/for_proto/pnc_point.h"
 #include "for_proto/pnc_point.h"
+#include "for_proto/sl_boundary.h"
+#include "math/box2d.h"
 #include "math/cubic_spline.h"
-
+#include "math/line_segment2d.h"
+#include "math/vec2d.h"
 namespace hqplanner {
 using hqplanner::forproto::AnchorPoint;
 using hqplanner::forproto::ReferencePoint;
+using hqplanner::forproto::SLBoundary;
 using hqplanner::forproto::SLPoint;
+using hqplanner::math::Box2d;
 using hqplanner::math::CubicSpline;
+using hqplanner::math::LineSegment2d;
 using hqplanner::math::Vec2d;
+
 double REFERENCE_LINE_SAMPLE_STEP = 0.1;
 
 class ReferenceLine {
@@ -49,6 +56,8 @@ class ReferenceLine {
 
   ReferencePoint GetReferencePoint(const double x, const double y) const;
   ReferencePoint GetReferencePoint(const double s);
+
+  bool GetSLBoundary(const Box2d& box, SLBoundary* const sl_boundary);
 
  private:
   std::vector<AnchorPoint> anchor_points_;
@@ -130,42 +139,73 @@ bool ReferenceLine::SLToXY(const SLPoint& sl_point, Vec2d* const xy_point) {
 
 bool ReferenceLine::XYToSL(const Vec2d& xy_point, SLPoint* const sl_point) {
   assert(sl_point != nullptr);
+  assert(reference_line_points_.size() >= 2);
   // DCHECK_NOTNULL(sl_point);
   double s = 0.0;
   double l = 0.0;
 
-  if (!map_path_.GetProjection(xy_point, &s, &l)) {
-    AERROR << "Can't get nearest point from path.";
-    return false;
+  // 寻找最近点
+  double min_distance = std::numeric_limits<double>::infinity();
+  int index_min = 0;
+  int start_index = 0;
+  for (int i = 0; i < reference_line_points_.size(); + i) {
+    const auto ref_point = reference_line_points_[i];
+    double square_distance =
+        xy_point.DistanceSquareTo(Vec2d(ref_point.x, ref_point.y));
+    if (square_distance < min_distance) {
+      min_distance = square_distance;
+      index_min = i;
+    }
   }
-  sl_point->set_s(s);
-  sl_point->set_l(l);
+  LineSegment2d closest_segment;
+  if (index_min == 0) {
+    closest_segment = LineSegment2d(
+        Vec2d(reference_line_points_[0].x, reference_line_points_[0].y),
+        Vec2d(reference_line_points_[1].x, reference_line_points_[1].y));
+    start_index = 0;
+
+  } else if (index_min == reference_line_points_.size() - 1) {
+    closest_segment =
+        LineSegment2d(Vec2d(reference_line_points_[index_min - 1].x,
+                            reference_line_points_[index_min - 1].y),
+                      Vec2d(reference_line_points_[index_min].x,
+                            reference_line_points_[index_min].y));
+    start_index = index_min - 1;
+
+  } else {
+    double square_dist1 = xy_point.DistanceSquareTo(
+        Vec2d(reference_line_points_[index_min - 1].x,
+              reference_line_points_[index_min - 1].y));
+    double square_dist2 = xy_point.DistanceSquareTo(
+        Vec2d(reference_line_points_[index_min + 1].x,
+              reference_line_points_[index_min + 1].y));
+    if (square_dist1 < square_dist2) {
+      closest_segment =
+          LineSegment2d(Vec2d(reference_line_points_[index_min - 1].x,
+                              reference_line_points_[index_min - 1].y),
+                        Vec2d(reference_line_points_[index_min].x,
+                              reference_line_points_[index_min].y));
+      start_index = index_min - 1;
+
+    } else {
+      closest_segment =
+          LineSegment2d(Vec2d(reference_line_points_[index_min].x,
+                              reference_line_points_[index_min].y),
+                        Vec2d(reference_line_points_[index_min + 1].x,
+                              reference_line_points_[index_min + 1].y));
+      start_index = index_min;
+    }
+  }
+
+  const double distance = closest_segment.DistanceTo(xy_point);
+  const double proj = closest_segment.ProjectOntoUnit(xy_point);
+  const double prod = closest_segment.ProductOntoUnit(xy_point);
+
+  sl_point->s = reference_line_points_[start_index].s +
+                std::min(proj, closest_segment.length());
+  sl_point->l = (prod > 0.0 ? distance : -distance);
   return true;
 }
-
-// ReferencePoint ReferenceLine::GetReferencePoint(const double s) const {
-//   if (s<reference_line_points_.front().s-1e-2){
-//     return reference_line_points_.front();
-//   }
-//     if (s > reference_line_points_.back().s + 1e-2) {
-//     return reference_line_points_.back();
-//   }
-
-//   auto interpolate_index = map_path_.GetIndexFromS(s);
-
-//   uint32_t index = interpolate_index.id;
-//   uint32_t next_index = index + 1;
-//   if (next_index >= reference_points_.size()) {
-//     next_index = reference_points_.size() - 1;
-//   }
-
-//   const auto& p0 = reference_points_[index];
-//   const auto& p1 = reference_points_[next_index];
-
-//   const double s0 = accumulated_s[index];
-//   const double s1 = accumulated_s[next_index];
-//   return InterpolateWithMatchedIndex(p0, s0, p1, s1, interpolate_index);
-// }
 
 double ReferenceLine::GetPositionXByS(double i_s) {
   return anchor_points_x_s_.GetSplinePointValue(i_s);
@@ -220,10 +260,30 @@ ReferencePoint ReferenceLine::GetReferencePoint(const double s) {
   return ref_point;
 }
 
-// ReferencePoint ReferenceLine::GetReferencePoint(const double x,
-//                                                 const double y) const {
-
-//                                                 }
+bool ReferenceLine::GetSLBoundary(const Box2d& box,
+                                  SLBoundary* const sl_boundary) {
+  double start_s(std::numeric_limits<double>::max());
+  double end_s(std::numeric_limits<double>::lowest());
+  double start_l(std::numeric_limits<double>::max());
+  double end_l(std::numeric_limits<double>::lowest());
+  std::vector<Vec2d> corners;
+  box.GetAllCorners(&corners);
+  for (const auto& point : corners) {
+    SLPoint sl_point;
+    if (!XYToSL(point, &sl_point)) {
+      return false;
+    }
+    start_s = std::fmin(start_s, sl_point.s);
+    end_s = std::fmax(end_s, sl_point.s);
+    start_l = std::fmin(start_l, sl_point.l);
+    end_l = std::fmax(end_l, sl_point.l);
+  }
+  sl_boundary->start_s = start_s;
+  sl_boundary->end_s = end_s;
+  sl_boundary->start_l = start_l;
+  sl_boundary->end_l = end_l;
+  return true;
+}
 
 void ReferenceLine::ConstructReferenceLineByFixedStep() {
   int reference_line_points_num =
@@ -260,14 +320,6 @@ void ReferenceLine::ConstructReferenceLineByFixedStep() {
     reference_line_points_.back().dkappa =
         ComputeCurvatureDerivative(i_dx, i_ddx, i_dddx, i_dy, i_ddy, i_dddy);
   }
-  // for (int i = 0; i < reference_line_points_.size() - 1; ++i) {
-  //   reference_line_points_[i].d_curvature =
-  //       (reference_line_points_[i + 1].curvature -
-  //        reference_line_points_[i].curvature) /
-  //       REFERENCE_LINE_SAMPLE_STEP;
-  // }
-  // reference_line_points_.back().d_curvature =
-  //     reference_line_points_[reference_line_points_.size() - 2].d_curvature;
 }
 
 // =======================备用方案=============================================

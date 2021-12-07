@@ -37,7 +37,7 @@ struct VehicleParam {
 };
 
 struct VehicleConfig {
-  VehicleParam vehicle_param;
+  const VehicleParam vehicle_param;
 }
 
 }  // namespace forproto

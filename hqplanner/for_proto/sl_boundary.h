@@ -1,4 +1,7 @@
-
+#ifndef HQPLANNER_FOR_PROTO_SL_BOUNDARY_H_
+#define HQPLANNER_FOR_PROTO_SL_BOUNDARY_H_
+namespace hqplanner {
+namespace forproto {
 /////////////////////////////////////////////////////////////////
 // The start_s and end_s are longitudinal values.
 // start_s <= end_s.
@@ -22,3 +25,7 @@ struct SLBoundary {
   double start_l;
   double end_l;
 };
+}  // namespace forproto
+}  // namespace hqplanner
+
+#endif

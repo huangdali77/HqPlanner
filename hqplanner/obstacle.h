@@ -11,14 +11,13 @@
 #include "math/box2d.h"
 #include "math/polygon2d.h"
 #include "math/vec2d.h"
-
-// #include "modules/perception/proto/perception_obstacle.pb.h"
 // #include "modules/planning/common/indexed_list.h"
 // #include "modules/prediction/proto/prediction_obstacle.pb.h"
 
 namespace hqplanner {
 using hqplanner::forproto::PerceptionObstacle;
 using hqplanner::forproto::TrajectoryPoint;
+using hqplanner::math::Vec2d;
 /**
  * @class Obstacle
  *
@@ -28,8 +27,8 @@ class Obstacle {
  public:
   Obstacle() = default;
 
-  //   Obstacle(const std::string &id,
-  //            const perception::PerceptionObstacle &perception_obstacle);
+  Obstacle(const std::string &id,
+           const PerceptionObstacle &perception_obstacle);
 
   //   Obstacle(const std::string &id,
   //            const perception::PerceptionObstacle &perception,
@@ -105,6 +104,36 @@ class Obstacle {
 // ThreadSafeIndexedObstacles;
 
 // ==============================函数实现============================
+Obstacle::Obstacle(const std::string &id,
+                   const PerceptionObstacle &perception_obstacle)
+    : id_(id),
+      perception_id_(perception_obstacle.id),
+      perception_obstacle_(perception_obstacle),
+      perception_bounding_box_(
+          {perception_obstacle_.position.x, perception_obstacle_.position.y},
+          perception_obstacle_.theta, perception_obstacle_.length,
+          perception_obstacle_.width) {
+  std::vector<common::math::Vec2d> polygon_points;
+  if (FLAGS_use_navigation_mode ||
+      perception_obstacle.polygon_point_size() <= 2) {
+    perception_bounding_box_.GetAllCorners(&polygon_points);
+  } else {
+    CHECK(perception_obstacle.polygon_point_size() > 2)
+        << "object " << id << "has less than 3 polygon points";
+    for (const auto &point : perception_obstacle.polygon_point()) {
+      polygon_points.emplace_back(point.x(), point.y());
+    }
+  }
+  CHECK(common::math::Polygon2d::ComputeConvexHull(polygon_points,
+                                                   &perception_polygon_))
+      << "object[" << id << "] polygon is not a valid convex hull";
+
+  is_static_ = IsStaticObstacle(perception_obstacle);
+  is_virtual_ = IsVirtualObstacle(perception_obstacle);
+  speed_ = std::hypot(perception_obstacle.velocity().x(),
+                      perception_obstacle.velocity().y());
+}
+
 const PerceptionObstacle &Obstacle::Perception() const {
   return perception_obstacle_;
 }
