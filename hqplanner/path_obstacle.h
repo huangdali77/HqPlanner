@@ -131,33 +131,37 @@ void PathObstacle::SetPerceptionSlBoundary(const SLBoundary& sl_boundary) {
   perception_sl_boundary_ = sl_boundary;
 }
 
-// void PathObstacle::BuildReferenceLineStBoundary(
-//     const ReferenceLine& reference_line, const double adc_start_s) {
-//   const auto& adc_param = adc_param_;
+void PathObstacle::BuildReferenceLineStBoundary(
+    const ReferenceLine& reference_line, const double adc_start_s) {
+  // const VehicleParam adc_param;
 
-//   const double adc_width = adc_param.width;
-//   if (obstacle_->IsStatic() || obstacle_->Trajectory().empty()) {
-//     std::vector<std::pair<STPoint, STPoint>> point_pairs;
-//     double start_s = perception_sl_boundary_.start_s;
-//     double end_s = perception_sl_boundary_.end_s;
-//     if (end_s - start_s < kStBoundaryDeltaS) {
-//       end_s = start_s + kStBoundaryDeltaS;
-//     }
-//     // if (!reference_line.IsBlockRoad(obstacle_->PerceptionBoundingBox(),
-//     //                                 adc_width)) {
-//     //   return;
-//     // }
-//     point_pairs.emplace_back(STPoint(start_s - adc_start_s, 0.0),
-//                              STPoint(end_s - adc_start_s, 0.0));
-//     point_pairs.emplace_back(STPoint(start_s - adc_start_s, FLAGS_st_max_t),
-//                              STPoint(end_s - adc_start_s, FLAGS_st_max_t));
-//     reference_line_st_boundary_ = StBoundary(point_pairs);
-//   } else {
-//     BuildTrajectoryStBoundary(reference_line, adc_start_s,
-//                               &reference_line_st_boundary_)
-//   }
-// }
+  const double adc_width = adc_param_.width;
+  if (obstacle_->IsStatic() || obstacle_->Trajectory().empty()) {
+    std::vector<std::pair<STPoint, STPoint>> point_pairs;
+    double start_s = perception_sl_boundary_.start_s;
+    double end_s = perception_sl_boundary_.end_s;
+    if (end_s - start_s < kStBoundaryDeltaS) {
+      end_s = start_s + kStBoundaryDeltaS;
+    }
 
+    point_pairs.emplace_back(STPoint(start_s - adc_start_s, 0.0),
+                             STPoint(end_s - adc_start_s, 0.0));
+    point_pairs.emplace_back(STPoint(start_s - adc_start_s, FLAGS_st_max_t),
+                             STPoint(end_s - adc_start_s, FLAGS_st_max_t));
+    reference_line_st_boundary_ = StBoundary(point_pairs);
+  } else {
+    if (BuildTrajectoryStBoundary(reference_line, adc_start_s,
+                                  &reference_line_st_boundary_)) {
+      ADEBUG << "Found st_boundary for obstacle " << id_;
+      ADEBUG << "st_boundary: min_t = " << reference_line_st_boundary_.min_t()
+             << ", max_t = " << reference_line_st_boundary_.max_t()
+             << ", min_s = " << reference_line_st_boundary_.min_s()
+             << ", max_s = " << reference_line_st_boundary_.max_s();
+    } else {
+      ADEBUG << "No st_boundary for obstacle " << id_;
+    }
+  }
+}
 // bool PathObstacle::BuildTrajectoryStBoundary(
 //     const ReferenceLine& reference_line, const double adc_start_s,
 //     StBoundary* const st_boundary) {

@@ -1,6 +1,8 @@
 #ifndef HQPLANNER_OBSTACLE_H_
 #define HQPLANNER_OBSTACLE_H_
 
+#include <assert.h>
+
 #include <list>
 #include <memory>
 #include <string>
@@ -17,6 +19,7 @@
 namespace hqplanner {
 using hqplanner::forproto::PerceptionObstacle;
 using hqplanner::forproto::TrajectoryPoint;
+using hqplanner::math::Polygon2d;
 using hqplanner::math::Vec2d;
 /**
  * @class Obstacle
@@ -77,8 +80,7 @@ class Obstacle {
   //   static std::unique_ptr<Obstacle> CreateStaticVirtualObstacles(
   //       const std::string &id, const common::math::Box2d &obstacle_box);
 
-  //   static bool IsStaticObstacle(
-  //       const perception::PerceptionObstacle &perception_obstacle);
+  static bool IsStaticObstacle(const PerceptionObstacle &perception_obstacle);
 
   //   static bool IsVirtualObstacle(
   //       const perception::PerceptionObstacle &perception_obstacle);
@@ -90,7 +92,7 @@ class Obstacle {
  private:
   std::string id_;
   std::int32_t perception_id_ = 0;
-  bool is_static_ = false;
+  bool is_static_ = true;
   //   bool is_virtual_ = false;
   double speed_ = 0.0;
   std::vector<TrajectoryPoint> trajectory_;
@@ -113,25 +115,27 @@ Obstacle::Obstacle(const std::string &id,
           {perception_obstacle_.position.x, perception_obstacle_.position.y},
           perception_obstacle_.theta, perception_obstacle_.length,
           perception_obstacle_.width) {
-  std::vector<common::math::Vec2d> polygon_points;
-  if (FLAGS_use_navigation_mode ||
-      perception_obstacle.polygon_point_size() <= 2) {
-    perception_bounding_box_.GetAllCorners(&polygon_points);
-  } else {
-    CHECK(perception_obstacle.polygon_point_size() > 2)
-        << "object " << id << "has less than 3 polygon points";
-    for (const auto &point : perception_obstacle.polygon_point()) {
-      polygon_points.emplace_back(point.x(), point.y());
-    }
+  std::vector<Vec2d> polygon_points;
+
+  for (const auto &point : perception_obstacle.polygon_point) {
+    polygon_points.emplace_back(point.x, point.y);
   }
-  CHECK(common::math::Polygon2d::ComputeConvexHull(polygon_points,
-                                                   &perception_polygon_))
-      << "object[" << id << "] polygon is not a valid convex hull";
+
+  assert(Polygon2d::ComputeConvexHull(polygon_points, &perception_polygon_));
 
   is_static_ = IsStaticObstacle(perception_obstacle);
-  is_virtual_ = IsVirtualObstacle(perception_obstacle);
-  speed_ = std::hypot(perception_obstacle.velocity().x(),
-                      perception_obstacle.velocity().y());
+
+  speed_ = std::hypot(perception_obstacle.velocity.x,
+                      perception_obstacle.velocity.y);
+}
+
+bool Obstacle::IsStaticObstacle(const PerceptionObstacle &perception_obstacle) {
+  if (perception_obstacle.type == PerceptionObstacle::UNKNOWN_UNMOVABLE) {
+    return true;
+  }
+  auto moving_speed = std::hypot(perception_obstacle.velocity.x,
+                                 perception_obstacle.velocity.y);
+  return moving_speed <= 0.5;
 }
 
 const PerceptionObstacle &Obstacle::Perception() const {

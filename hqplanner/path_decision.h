@@ -22,7 +22,8 @@ class PathDecision {
  public:
   PathDecision() = default;
 
-  void AddPathObstacle(PathObstacle path_obstacle);
+  // void AddPathObstacle(PathObstacle path_obstacle);
+  PathObstacle *AddPathObstacle(const PathObstacle &path_obstacle);
 
   const std::unordered_map<std::string, PathObstacle> &path_obstacles() const;
 
@@ -33,11 +34,17 @@ class PathDecision {
 };
 
 // ====================函数实现=============================
-void PathDecision::AddPathObstacle(PathObstacle path_obstacle) {
-  std::pair<std::string, PathObstacle> path_obstacle_t(path_obstacle.Id(),
-                                                       path_obstacle);
+PathObstacle *PathDecision::AddPathObstacle(const PathObstacle &path_obstacle) {
+  auto obs = path_obstacles_.find(path_obstacle.Id());
 
-  path_obstacles_.insert(path_obstacle_t);
+  if (obs != path_obstacles_.end()) {
+    path_obstacles_.erase(path_obstacle.Id());
+    path_obstacles_.insert(std::make_pair(path_obstacle.Id(), path_obstacle));
+
+  } else {
+    path_obstacles_.insert(std::make_pair(path_obstacle.Id(), path_obstacle));
+  }
+  return &path_obstacles_.at(path_obstacle.Id());
 }
 
 const std::unordered_map<std::string, PathObstacle>

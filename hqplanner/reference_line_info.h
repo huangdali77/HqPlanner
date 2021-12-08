@@ -33,7 +33,7 @@ class ReferenceLineInfo {
  public:
   explicit ReferenceLineInfo(const VehicleState& vehicle_state,
                              const TrajectoryPoint& adc_planning_point,
-                             const ReferenceLine& reference_line, );
+                             const ReferenceLine& reference_line);
 
   bool Init(const std::vector<const Obstacle*>& obstacles);
 
@@ -171,7 +171,7 @@ class ReferenceLineInfo {
 // ===============函数实现==================================
 ReferenceLineInfo::ReferenceLineInfo(const VehicleState& vehicle_state,
                                      const TrajectoryPoint& adc_planning_point,
-                                     const ReferenceLine& reference_line, )
+                                     const ReferenceLine& reference_line)
     : vehicle_state_(vehicle_state),
       adc_planning_point_(adc_planning_point),
       reference_line_(reference_line) {}
@@ -187,6 +187,7 @@ bool ReferenceLineInfo::Init(const std::vector<const Obstacle*>& obstacles) {
   Vec2d center(position + vec_to_center.rotate(path_point.theta));
   Box2d box(center, path_point.theta, param.length, param.width);
 
+  // 获取自车的sl_boundary
   if (!reference_line_.GetSLBoundary(box, &adc_sl_boundary_)) {
     return false;
   }
@@ -206,23 +207,103 @@ bool ReferenceLineInfo::Init(const std::vector<const Obstacle*>& obstacles) {
   }
 
   if (!AddObstacles(obstacles)) {
-        return false;
+    return false;
   }
 
-  if (hdmap::GetSpeedControls()) {
-    auto* speed_controls = hdmap::GetSpeedControls();
-    for (const auto& speed_control : speed_controls->speed_control()) {
-      reference_line_.AddSpeedLimit(speed_control);
-    }
-  }
+  // if (hdmap::GetSpeedControls()) {
+  //   auto* speed_controls = hdmap::GetSpeedControls();
+  //   for (const auto& speed_control : speed_controls->speed_control()) {
+  //     reference_line_.AddSpeedLimit(speed_control);
+  //   }
+  // }
 
   // set lattice planning target speed limit;
-  SetCruiseSpeed(FLAGS_default_cruise_speed);
-  is_safe_to_change_lane_ = CheckChangeLane();
+  // SetCruiseSpeed(FLAGS_default_cruise_speed);
+  // is_safe_to_change_lane_ = CheckChangeLane();
   is_inited_ = true;
   return true;
 }
 
+bool ReferenceLineInfo::AddObstacles(
+    const std::vector<const Obstacle*>& obstacles) {
+  for (const auto* obstacle : obstacles) {
+    if (!AddObstacle(obstacle)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+PathObstacle* ReferenceLineInfo::AddObstacle(const Obstacle* obstacle) {
+  if (!obstacle) {
+    // AERROR << "The provided obstacle is empty";
+    return nullptr;
+  }
+  auto* path_obstacle = path_decision_.AddPathObstacle(PathObstacle(obstacle));
+  if (!path_obstacle) {
+    // AERROR << "failed to add obstacle " << obstacle->Id();
+    return nullptr;
+  }
+
+  SLBoundary perception_sl;
+  if (!reference_line_.GetSLBoundary(obstacle->PerceptionBoundingBox(),
+                                     &perception_sl)) {
+    // AERROR << "Failed to get sl boundary for obstacle: " << obstacle->Id();
+    return path_obstacle;
+  }
+  path_obstacle->SetPerceptionSlBoundary(perception_sl);
+
+  // if (IsUnrelaventObstacle(path_obstacle)) {
+  //   ObjectDecisionType ignore;
+  //   ignore.mutable_ignore();
+  //   path_decision_.AddLateralDecision("reference_line_filter",
+  //   obstacle->Id(),
+  //                                     ignore);
+  //   path_decision_.AddLongitudinalDecision("reference_line_filter",
+  //                                          obstacle->Id(), ignore);
+  //   ADEBUG << "NO build reference line st boundary. id:" << obstacle->Id();
+  // // } else {
+  //   ADEBUG << "build reference line st boundary. id:" << obstacle->Id();
+  path_obstacle->BuildReferenceLineStBoundary(reference_line_,
+                                              adc_sl_boundary_.start_s);
+
+  // ADEBUG << "reference line st boundary: "
+  //        << path_obstacle->reference_line_st_boundary().min_t() << ", "
+  //        << path_obstacle->reference_line_st_boundary().max_t()
+  //        << ", s_max: " <<
+  //        path_obstacle->reference_line_st_boundary().max_s()
+  //        << ", s_min: " <<
+  //        path_obstacle->reference_line_st_boundary().min_s();
+  // }
+  return path_obstacle;
+}
+
+const PathData& ReferenceLineInfo::path_data() const { return path_data_; }
+
+const SpeedData& ReferenceLineInfo::speed_data() const { return speed_data_; }
+
+PathData* ReferenceLineInfo::mutable_path_data() { return &path_data_; }
+
+SpeedData* ReferenceLineInfo::mutable_speed_data() { return &speed_data_; }
+
+bool ReferenceLineInfo::IsInited() const { return is_inited_; }
+
+PathDecision* ReferenceLineInfo::path_decision() { return &path_decision_; }
+
+const PathDecision& ReferenceLineInfo::path_decision() const {
+  return path_decision_;
+}
+
+const ReferenceLine& ReferenceLineInfo::reference_line() const {
+  return reference_line_;
+}
+const TrajectoryPoint& ReferenceLineInfo::AdcPlanningPoint() const {
+  return adc_planning_point_;
+}
+
+void ReferenceLineInfo::SetTrajectory(const DiscretizedTrajectory& trajectory) {
+  discretized_trajectory_ = trajectory;
+}
 }  // namespace hqplanner
 
 #endif
