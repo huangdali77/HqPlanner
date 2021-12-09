@@ -3,6 +3,7 @@
 #include <list>
 
 #include "reference_line.h"
+namespace hqplanner {
 class ReferenceLineProvider {
  public:
   bool AddReferenceLine(ReferenceLine& ref_line) {
@@ -12,5 +13,6 @@ class ReferenceLineProvider {
  private:
   std ::list<ReferenceLine> reference_lines_;
 };
+}  // namespace hqplanner
 
 #endif

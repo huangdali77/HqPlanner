@@ -9,6 +9,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include "for_proto/config_param.h"
+#include "for_proto/pnc_point.h"
 #include "for_proto/sl_boundary.h"
 #include "for_proto/vehicle_config.h"
 #include "for_proto/vehicle_state.h"
@@ -17,10 +19,11 @@
 #include "reference_line.h"
 #include "speed/speed_data.h"
 #include "trajectory/discretized_trajectory.h"
-
 namespace hqplanner {
 using hqplanner::PathDecision;
+using hqplanner::forproto::PathPoint;
 using hqplanner::forproto::SLBoundary;
+using hqplanner::forproto::SpeedPoint;
 using hqplanner::forproto::TrajectoryPoint;
 using hqplanner::forproto::VehicleConfig;
 using hqplanner::forproto::VehicleParam;
@@ -167,6 +170,8 @@ class ReferenceLineInfo {
   double offset_to_other_reference_line_ = 0.0;
 
   double priority_cost_ = 0.0;
+
+  ConfigParam config_param_;
 };
 // ===============函数实现==================================
 ReferenceLineInfo::ReferenceLineInfo(const VehicleState& vehicle_state,
@@ -301,8 +306,71 @@ const TrajectoryPoint& ReferenceLineInfo::AdcPlanningPoint() const {
   return adc_planning_point_;
 }
 
+const SLBoundary& ReferenceLineInfo::AdcSlBoundary() const {
+  return adc_sl_boundary_;
+}
 void ReferenceLineInfo::SetTrajectory(const DiscretizedTrajectory& trajectory) {
   discretized_trajectory_ = trajectory;
+}
+
+const DiscretizedTrajectory& ReferenceLineInfo::trajectory() const {
+  return discretized_trajectory_;
+}
+double ReferenceLineInfo::TrajectoryLength() const {
+  const auto& tps = discretized_trajectory_.trajectory_points();
+  if (tps.empty()) {
+    return 0.0;
+  }
+  return tps.back().path_point.s;
+}
+
+bool ReferenceLineInfo::CombinePathAndSpeedProfile(
+    const double relative_time, const double start_s,
+    DiscretizedTrajectory* ptr_discretized_trajectory) {
+  assert(ptr_discretized_trajectory != nullptr);
+  // use varied resolution to reduce data load but also provide enough data
+  // point for control module
+  const double kDenseTimeResoltuion =
+      config_param_.FLAGS_trajectory_time_min_interval;
+  const double kSparseTimeResolution =
+      config_param_.FLAGS_trajectory_time_max_interval;
+  const double kDenseTimeSec =
+      config_param_.FLAGS_trajectory_time_high_density_period;
+  if (path_data_.discretized_path().NumOfPoints() == 0) {
+    // AWARN << "path data is empty";
+    return false;
+  }
+  for (double cur_rel_time = 0.0; cur_rel_time < speed_data_.TotalTime();
+       cur_rel_time += (cur_rel_time < kDenseTimeSec ? kDenseTimeResoltuion
+                                                     : kSparseTimeResolution)) {
+    SpeedPoint speed_point;
+    if (!speed_data_.EvaluateByTime(cur_rel_time, &speed_point)) {
+      // AERROR << "Fail to get speed point with relative time " <<
+      // cur_rel_time;
+      return false;
+    }
+
+    if (speed_point.s > path_data_.discretized_path().Length()) {
+      break;
+    }
+    PathPoint path_point;
+    if (!path_data_.GetPathPointWithPathS(speed_point.s, &path_point)) {
+      // AERROR << "Fail to get path data with s " << speed_point.s()
+      //        << "path total length " <<
+      //        path_data_.discretized_path().Length();
+      return false;
+    }
+    path_point.s = path_point.s + start_s;
+
+    TrajectoryPoint trajectory_point;
+    // trajectory_point.mutable_path_point()->CopyFrom(path_point);
+    trajectory_point.path_point = path_point;
+    trajectory_point.v = speed_point.v;
+    trajectory_point.a = speed_point.a;
+    trajectory_point.relative_time = speed_point.t + relative_time;
+    ptr_discretized_trajectory->AppendTrajectoryPoint(trajectory_point);
+  }
+  return true;
 }
 }  // namespace hqplanner
 

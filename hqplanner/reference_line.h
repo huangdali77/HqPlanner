@@ -59,6 +59,9 @@ class ReferenceLine {
 
   bool GetSLBoundary(const Box2d& box, SLBoundary* const sl_boundary);
 
+  bool GetApproximateSLBoundary(const Box2d& box,
+                                SLBoundary* const sl_boundary);
+
  private:
   std::vector<AnchorPoint> anchor_points_;
   std::vector<double> anchor_points_x_;
@@ -282,6 +285,44 @@ bool ReferenceLine::GetSLBoundary(const Box2d& box,
   sl_boundary->end_s = end_s;
   sl_boundary->start_l = start_l;
   sl_boundary->end_l = end_l;
+  return true;
+}
+
+bool ReferenceLine::GetApproximateSLBoundary(const Box2d& box,
+                                             SLBoundary* const sl_boundary) {
+  SLPoint box_center_sl_point;
+  if (!XYToSL(box.center(), &box_center_sl_point)) {
+    return false;
+  }
+  ReferencePoint reference_point = GetReferencePoint(box_center_sl_point.s);
+
+  auto rotated_box = box;
+  rotated_box.RotateFromCenter(-reference_point.heading);
+
+  std::vector<Vec2d> corners;
+  rotated_box.GetAllCorners(&corners);
+
+  double min_s(std::numeric_limits<double>::max());
+  double max_s(std::numeric_limits<double>::lowest());
+  double min_l(std::numeric_limits<double>::max());
+  double max_l(std::numeric_limits<double>::lowest());
+
+  for (const auto& point : corners) {
+    // x <--> s, y <--> l
+    // because the box is rotated to align the reference line
+    min_s = std::fmin(
+        min_s, point.x() - rotated_box.center().x() + box_center_sl_point.s);
+    max_s = std::fmax(
+        max_s, point.x() - rotated_box.center().x() + box_center_sl_point.s);
+    min_l = std::fmin(
+        min_l, point.y() - rotated_box.center().y() + box_center_sl_point.l);
+    max_l = std::fmax(
+        max_l, point.y() - rotated_box.center().y() + box_center_sl_point.l);
+  }
+  sl_boundary->start_s = min_s;
+  sl_boundary->end_s = max_s;
+  sl_boundary->start_l = min_l;
+  sl_boundary->end_l = max_l;
   return true;
 }
 
