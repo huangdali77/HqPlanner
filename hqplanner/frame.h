@@ -9,12 +9,16 @@
 #include <string>
 #include <vector>
 
-#include "for_proto/adc_trajectory.h";
+#include "for_proto/adc_trajectory.h"
+#include "for_proto/config_param.h"
 #include "for_proto/perception_obstacle.h"
 #include "for_proto/pnc_point.h"
 #include "for_proto/prediction_obstacle.h"
 #include "for_proto/vehicle_state.h"
+#include "math/box2d.h"
+#include "math/indexed_queue.h"
 #include "math/vec2d.h"
+#include "obstacle.h"
 #include "reference_line.h"
 #include "reference_line_info.h"
 #include "reference_line_provider.h"
@@ -25,7 +29,10 @@ using hqplanner::forproto::PerceptionObstacles;
 using hqplanner::forproto::PredictionObstacles;
 using hqplanner::forproto::TrajectoryPoint;
 using hqplanner::forproto::VehicleState;
+using hqplanner::math::Box2d;
+using hqplanner::math::IndexedQueue;
 using hqplanner::math::Vec2d;
+
 class Frame {
  public:
   Frame() = default;
@@ -96,9 +103,8 @@ class Frame {
   /**
    * @brief create a static virtual obstacle
    */
-  // const Obstacle *CreateStaticVirtualObstacle(const std::string &id,
-  //                                             const common::math::Box2d
-  //                                             &box);
+  const Obstacle *CreateStaticVirtualObstacle(const std::string &id,
+                                              const Box2d &box);
 
   void AddObstacle(const Obstacle &obstacle);
 
@@ -114,10 +120,117 @@ class Frame {
    **/
   const ReferenceLineInfo *drive_reference_line_info_ = nullptr;
   PredictionObstacles prediction_;
-
+  std::unordered_map<std::string, Obstacle> obstacles_;
   ADCTrajectory trajectory_;  // last published trajectory
 
   ReferenceLineProvider *reference_line_provider_ = nullptr;
+};
+// =============================函数实现=================================
+Frame::Frame(uint32_t sequence_num, const TrajectoryPoint &planning_start_point,
+             const double start_time, const VehicleState &vehicle_state,
+             ReferenceLineProvider *reference_line_provider)
+    : sequence_num_(sequence_num),
+      planning_start_point_(planning_start_point),
+      start_time_(start_time),
+      vehicle_state_(vehicle_state),
+      reference_line_provider_(reference_line_provider) {}
+
+const TrajectoryPoint &Frame::PlanningStartPoint() const {
+  return planning_start_point_;
+}
+
+const VehicleState &Frame::vehicle_state() const { return vehicle_state_; }
+
+std::list<ReferenceLineInfo> &Frame::reference_line_info() {
+  return reference_line_info_;
+}
+
+const Obstacle *Frame::CreateStopObstacle(
+    ReferenceLineInfo *const reference_line_info,
+    const std::string &obstacle_id, const double obstacle_s) {
+  if (reference_line_info == nullptr) {
+    // AERROR << "reference_line_info nullptr";
+    return nullptr;
+  }
+
+  const auto &reference_line = reference_line_info->reference_line();
+  const double box_center_s =
+      obstacle_s + ConfigParam::FLAGS_virtual_stop_wall_length / 2.0;
+  auto box_center = reference_line.GetReferencePoint(box_center_s);
+  double heading = reference_line.GetReferencePoint(obstacle_s).heading;
+  double lane_left_width = 0.0;
+  double lane_right_width = 0.0;
+  reference_line.GetLaneWidth(obstacle_s, &lane_left_width, &lane_right_width);
+  Box2d stop_wall_box(Vec2d(box_center.x, box_center.y), heading,
+                      ConfigParam::FLAGS_virtual_stop_wall_length,
+                      lane_left_width + lane_right_width);
+
+  return CreateStaticVirtualObstacle(obstacle_id, stop_wall_box);
+}
+
+const Obstacle *Frame::CreateStaticVirtualObstacle(const std::string &id,
+                                                   const Box2d &box) {
+  auto object = obstacles_.find(id);
+  if (object != obstacles_.end()) {
+    // AWARN << "obstacle " << id << " already exist.";
+    return &(object->second);
+  }
+  auto *ptr = obstacles_.insert(
+      std::make_pair(id, *Obstacle::CreateStaticVirtualObstacles(id, box)));
+  if (!ptr) {
+    AERROR << "Failed to create virtual obstacle " << id;
+  }
+  return ptr;
+}
+
+// ===================FrameHistory======================================
+class FrameHistory {
+ public:
+  // Get infinite capacity with 0.
+  FrameHistory() = default;
+  //   explicit FrameHistory(std::size_t capacity) : capacity_(capacity) {}
+
+  const Frame *Find(const uint32_t id) const {
+    std::unordered_map<uint32_t, std::unique_ptr<Frame>>::const_iterator it =
+        map_.find(id);
+    if (it == map_.end()) {
+      return nullptr;
+    }
+    return (it->second).get();
+  }
+
+  const Frame *Latest() const {
+    if (queue_.empty()) {
+      return nullptr;
+    }
+    return Find(queue_.back().first);
+  }
+
+  bool Add(const uint32_t id, std::unique_ptr<Frame> ptr) {
+    if (Find(id)) {
+      return false;
+    }
+    if (capacity_ > 0 && queue_.size() == capacity_) {
+      map_.erase(queue_.front().first);
+      queue_.pop();
+    }
+    queue_.push(std::make_pair(id, ptr.get()));
+    map_[id] = std::move(ptr);
+    return true;
+  }
+
+  void Clear() {
+    capacity_ = 0;
+    while (!queue_.empty()) {
+      queue_.pop();
+    }
+    map_.clear();
+  }
+
+ public:
+  std::size_t capacity_ = ConfigParam::FLAGS_max_history_frame_num;
+  std::queue<std::pair<uint32_t, const Frame *>> queue_;
+  std::unordered_map<uint32_t, std::unique_ptr<Frame>> map_;
 };
 
 // ===============================函数实现=================================

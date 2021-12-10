@@ -1,27 +1,33 @@
 #ifndef HQPLANNER_MATH_INDEXED_QUEUE_H_
 #define HQPLANNER_MATH_INDEXED_QUEUE_H_
 
-#include <google/protobuf/stubs/common.h>
+// #include <google/protobuf/stubs/common.h>
 
 #include <memory>
 #include <queue>
 #include <unordered_map>
 #include <utility>
 
-#include "google/protobuf/stubs/map_util.h"
-#include "modules/common/util/map_util.h"
-namespace apollo {
-namespace planning {
+// #include "google/protobuf/stubs/map_util.h"
+// #include "modules/common/util/map_util.h"
+namespace hqplanner {
+namespace math {
 
 template <typename I, typename T>
 class IndexedQueue {
  public:
   // Get infinite capacity with 0.
   explicit IndexedQueue(std::size_t capacity) : capacity_(capacity) {}
-
   const T *Find(const I id) const {
-    auto *result = apollo::common::util::FindOrNull(map_, id);
-    return result ? result->get() : nullptr;
+    // std::unordered_map<I, std::unique_ptr<T>>::iterator it =
+    //     map_.find(id);
+    map_.find(id);
+    if (it == map_.end()) {
+      return nullptr;
+    }
+    return (it->second).get();
+    // auto *result = apollo::common::util::FindOrNull(map_, id);
+    // return result ? result->get() : nullptr;
   }
 
   const T *Latest() const {
@@ -58,7 +64,7 @@ class IndexedQueue {
   std::unordered_map<I, std::unique_ptr<T>> map_;
 };
 
-}  // namespace planning
-}  // namespace apollo
+}  // namespace math
+}  // namespace hqplanner
 
 #endif  // MODULES_PLANNING_COMMON_INDEXED_QUEUE_H_

@@ -18,10 +18,10 @@ class CubicSpline {
   void CalculateSplineCoefs();
   MatrixXd CalculateAMtrix(const std::vector<double>& h);
   MatrixXd CalculateBMtrix(const std::vector<double>& h);
-  double GetSplinePointValue(double t);
-  double GetSplinePointFirstDerivativeValue(double t);
-  double GetSplinePointSecondDerivativeValue(double t);
-  double GetSplinePointThirdDerivativeValue(double t);
+  double GetSplinePointValue(double t) const;
+  double GetSplinePointFirstDerivativeValue(double t) const;
+  double GetSplinePointSecondDerivativeValue(double t) const;
+  double GetSplinePointThirdDerivativeValue(double t) const;
 
  private:
   /* data */
@@ -96,13 +96,14 @@ MatrixXd CubicSpline::CalculateBMtrix(const std::vector<double>& h) {
   return b;
 }
 
-double CubicSpline::GetSplinePointValue(double t) {
+double CubicSpline::GetSplinePointValue(double t) const {
   assert(t >= spline_anchor_points_x_.front() &&
          t <= spline_anchor_points_x_.back());
 
-  std::vector<double>::iterator index_it = std::upper_bound(
-      spline_anchor_points_x_.begin(), spline_anchor_points_x_.end(), t);
-  int index_i = int(index_it - spline_anchor_points_x_.begin()) - 1;
+  auto index_it = std::upper_bound(spline_anchor_points_x_.begin(),
+                                   spline_anchor_points_x_.end(), t);
+  int index_i = std::distance(spline_anchor_points_x_.begin(), index_it) - 1;
+  // int(index_it - spline_anchor_points_x_.begin()) - 1;
 
   double dx = t - spline_anchor_points_x_[index_i];
   double result = spline_coefs_a_[index_i] + spline_coefs_b_[index_i] * dx +
@@ -111,14 +112,15 @@ double CubicSpline::GetSplinePointValue(double t) {
   return result;
 }
 
-double CubicSpline::GetSplinePointFirstDerivativeValue(double t) {
+double CubicSpline::GetSplinePointFirstDerivativeValue(double t) const {
   assert(t >= spline_anchor_points_x_.front() &&
          t <= spline_anchor_points_x_.back());
 
-  std::vector<double>::iterator index_it = std::upper_bound(
-      spline_anchor_points_x_.begin(), spline_anchor_points_x_.end(), t);
+  auto index_it = std::upper_bound(spline_anchor_points_x_.begin(),
+                                   spline_anchor_points_x_.end(), t);
 
-  int index_i = int(index_it - spline_anchor_points_x_.begin()) - 1;
+  int index_i = std::distance(spline_anchor_points_x_.begin(), index_it) - 1;
+  // int index_i = int(index_it - spline_anchor_points_x_.begin()) - 1;
 
   double dx = t - spline_anchor_points_x_[index_i];
   double result = spline_coefs_b_[index_i] +
@@ -127,14 +129,14 @@ double CubicSpline::GetSplinePointFirstDerivativeValue(double t) {
   return result;
 }
 
-double CubicSpline::GetSplinePointSecondDerivativeValue(double t) {
+double CubicSpline::GetSplinePointSecondDerivativeValue(double t) const {
   assert(t >= spline_anchor_points_x_.front() &&
          t <= spline_anchor_points_x_.back());
 
-  std::vector<double>::iterator index_it = std::upper_bound(
-      spline_anchor_points_x_.begin(), spline_anchor_points_x_.end(), t);
-
-  int index_i = int(index_it - spline_anchor_points_x_.begin()) - 1;
+  auto index_it = std::upper_bound(spline_anchor_points_x_.begin(),
+                                   spline_anchor_points_x_.end(), t);
+  int index_i = std::distance(spline_anchor_points_x_.begin(), index_it) - 1;
+  // int index_i = int(index_it - spline_anchor_points_x_.begin()) - 1;
 
   double dx = t - spline_anchor_points_x_[index_i];
 
@@ -143,14 +145,14 @@ double CubicSpline::GetSplinePointSecondDerivativeValue(double t) {
   return result;
 }
 
-double CubicSpline::GetSplinePointThirdDerivativeValue(double t) {
+double CubicSpline::GetSplinePointThirdDerivativeValue(double t) const {
   assert(t >= spline_anchor_points_x_.front() &&
          t <= spline_anchor_points_x_.back());
 
-  std::vector<double>::iterator index_it = std::upper_bound(
-      spline_anchor_points_x_.begin(), spline_anchor_points_x_.end(), t);
-
-  int index_i = int(index_it - spline_anchor_points_x_.begin()) - 1;
+  auto index_it = std::upper_bound(spline_anchor_points_x_.begin(),
+                                   spline_anchor_points_x_.end(), t);
+  int index_i = std::distance(spline_anchor_points_x_.begin(), index_it) - 1;
+  // int index_i = int(index_it - spline_anchor_points_x_.begin()) - 1;
 
   double dx = t - spline_anchor_points_x_[index_i];
 

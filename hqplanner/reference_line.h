@@ -7,6 +7,7 @@
 
 // #include "hqplanner/cubic_spline_2d.h"
 // #include "hqplanner/for_proto/pnc_point.h"
+#include "for_proto/config_param.h"
 #include "for_proto/pnc_point.h"
 #include "for_proto/sl_boundary.h"
 #include "math/box2d.h"
@@ -15,6 +16,7 @@
 #include "math/vec2d.h"
 namespace hqplanner {
 using hqplanner::forproto::AnchorPoint;
+using hqplanner::forproto::ConfigParam;
 using hqplanner::forproto::ReferencePoint;
 using hqplanner::forproto::SLBoundary;
 using hqplanner::forproto::SLPoint;
@@ -34,33 +36,35 @@ class ReferenceLine {
   void AccumulateOnS();
   void ConstructReferenceLineByFixedStep();
   void ConstructReferenceLine2();
-  double ComputeCurvature(double dx, double ddx, double dy, double ddy);
+  double ComputeCurvature(double dx, double ddx, double dy, double ddy) const;
   double ComputeCurvatureDerivative(double dx, double ddx, double dddx,
-                                    double dy, double ddy, double dddy);
-  std::vector<ReferencePoint> GetReferenceLinePoints() {
+                                    double dy, double ddy, double dddy) const;
+  std::vector<ReferencePoint> GetReferenceLinePoints() const {
     return reference_line_points_;
   }
 
   double Length() const { return reference_line_points_.back().s; }
 
-  double GetPositionXByS(double i_s);
-  double GetPositionYByS(double i_s);
-  double GetHeadingByS(double i_s);
-  double GetKappaByS(double i_s);
-  double GetKappaDerivativeByS(double i_s);
+  double GetPositionXByS(double i_s) const;
+  double GetPositionYByS(double i_s) const;
+  double GetHeadingByS(double i_s) const;
+  double GetKappaByS(double i_s) const;
+  double GetKappaDerivativeByS(double i_s) const;
   // ReferencePoint GetReferencePoint(const double s) const;
   std::vector<AnchorPoint> GetAnchorPoints() { return anchor_points_; }
 
-  bool SLToXY(const SLPoint& sl_point, Vec2d* const xy_point);
-  bool XYToSL(const math::Vec2d& xy_point, SLPoint* const sl_point);
+  bool SLToXY(const SLPoint& sl_point, Vec2d* const xy_point) const;
+  bool XYToSL(const math::Vec2d& xy_point, SLPoint* const sl_point) const;
 
   ReferencePoint GetReferencePoint(const double x, const double y) const;
-  ReferencePoint GetReferencePoint(const double s);
+  ReferencePoint GetReferencePoint(const double s) const;
 
-  bool GetSLBoundary(const Box2d& box, SLBoundary* const sl_boundary);
+  bool GetSLBoundary(const Box2d& box, SLBoundary* const sl_boundary) const;
 
   bool GetApproximateSLBoundary(const Box2d& box,
-                                SLBoundary* const sl_boundary);
+                                SLBoundary* const sl_boundary) const;
+  bool GetLaneWidth(const double s, double* const lane_left_width,
+                    double* const lane_right_width) const;
 
  private:
   std::vector<AnchorPoint> anchor_points_;
@@ -106,7 +110,7 @@ void ReferenceLine::AccumulateOnS() {
 }
 
 double ReferenceLine::ComputeCurvature(double dx, double ddx, double dy,
-                                       double ddy) {
+                                       double ddy) const {
   double a = dx * ddy - dy * ddx;
   double norm_square = dx * dx + dy * dy;
   double norm = sqrt(norm_square);
@@ -116,7 +120,8 @@ double ReferenceLine::ComputeCurvature(double dx, double ddx, double dy,
 
 double ReferenceLine::ComputeCurvatureDerivative(double dx, double ddx,
                                                  double dddx, double dy,
-                                                 double ddy, double dddy) {
+                                                 double ddy,
+                                                 double dddy) const {
   double a = dx * ddy - dy * ddx;
   double b = dx * dddy - dy * dddx;
   double c = dx * ddx + dy * ddy;
@@ -124,7 +129,8 @@ double ReferenceLine::ComputeCurvatureDerivative(double dx, double ddx,
   return (b * d - 3.0 * a * c) / (d * d * d);
 }
 
-bool ReferenceLine::SLToXY(const SLPoint& sl_point, Vec2d* const xy_point) {
+bool ReferenceLine::SLToXY(const SLPoint& sl_point,
+                           Vec2d* const xy_point) const {
   assert(xy_point != nullptr);
 
   if (reference_line_points_.size() < 2) {
@@ -140,7 +146,8 @@ bool ReferenceLine::SLToXY(const SLPoint& sl_point, Vec2d* const xy_point) {
   return true;
 }
 
-bool ReferenceLine::XYToSL(const Vec2d& xy_point, SLPoint* const sl_point) {
+bool ReferenceLine::XYToSL(const Vec2d& xy_point,
+                           SLPoint* const sl_point) const {
   assert(sl_point != nullptr);
   assert(reference_line_points_.size() >= 2);
   // DCHECK_NOTNULL(sl_point);
@@ -210,21 +217,21 @@ bool ReferenceLine::XYToSL(const Vec2d& xy_point, SLPoint* const sl_point) {
   return true;
 }
 
-double ReferenceLine::GetPositionXByS(double i_s) {
+double ReferenceLine::GetPositionXByS(double i_s) const {
   return anchor_points_x_s_.GetSplinePointValue(i_s);
 }
 
-double ReferenceLine::GetPositionYByS(double i_s) {
+double ReferenceLine::GetPositionYByS(double i_s) const {
   return anchor_points_y_s_.GetSplinePointValue(i_s);
 }
 
-double ReferenceLine::GetHeadingByS(double i_s) {
+double ReferenceLine::GetHeadingByS(double i_s) const {
   double i_dx = anchor_points_x_s_.GetSplinePointFirstDerivativeValue(i_s);
   double i_dy = anchor_points_y_s_.GetSplinePointFirstDerivativeValue(i_s);
   return atan2(i_dy, i_dx);
 }
 
-double ReferenceLine::GetKappaByS(double i_s) {
+double ReferenceLine::GetKappaByS(double i_s) const {
   double i_dx = anchor_points_x_s_.GetSplinePointFirstDerivativeValue(i_s);
   double i_dy = anchor_points_y_s_.GetSplinePointFirstDerivativeValue(i_s);
   double i_ddx = anchor_points_x_s_.GetSplinePointSecondDerivativeValue(i_s);
@@ -232,7 +239,7 @@ double ReferenceLine::GetKappaByS(double i_s) {
   return ComputeCurvature(i_dx, i_ddx, i_dy, i_ddy);
 }
 
-double ReferenceLine::GetKappaDerivativeByS(double i_s) {
+double ReferenceLine::GetKappaDerivativeByS(double i_s) const {
   double i_dx = anchor_points_x_s_.GetSplinePointFirstDerivativeValue(i_s);
   double i_dy = anchor_points_y_s_.GetSplinePointFirstDerivativeValue(i_s);
   double i_ddx = anchor_points_x_s_.GetSplinePointSecondDerivativeValue(i_s);
@@ -242,7 +249,7 @@ double ReferenceLine::GetKappaDerivativeByS(double i_s) {
   return ComputeCurvatureDerivative(i_dx, i_ddx, i_dddx, i_dy, i_ddy, i_dddy);
 }
 
-ReferencePoint ReferenceLine::GetReferencePoint(const double s) {
+ReferencePoint ReferenceLine::GetReferencePoint(const double s) const {
   ReferencePoint ref_point(s);
 
   ref_point.x = anchor_points_x_s_.GetSplinePointValue(s);
@@ -264,7 +271,7 @@ ReferencePoint ReferenceLine::GetReferencePoint(const double s) {
 }
 
 bool ReferenceLine::GetSLBoundary(const Box2d& box,
-                                  SLBoundary* const sl_boundary) {
+                                  SLBoundary* const sl_boundary) const {
   double start_s(std::numeric_limits<double>::max());
   double end_s(std::numeric_limits<double>::lowest());
   double start_l(std::numeric_limits<double>::max());
@@ -288,8 +295,8 @@ bool ReferenceLine::GetSLBoundary(const Box2d& box,
   return true;
 }
 
-bool ReferenceLine::GetApproximateSLBoundary(const Box2d& box,
-                                             SLBoundary* const sl_boundary) {
+bool ReferenceLine::GetApproximateSLBoundary(
+    const Box2d& box, SLBoundary* const sl_boundary) const {
   SLPoint box_center_sl_point;
   if (!XYToSL(box.center(), &box_center_sl_point)) {
     return false;
@@ -361,6 +368,13 @@ void ReferenceLine::ConstructReferenceLineByFixedStep() {
     reference_line_points_.back().dkappa =
         ComputeCurvatureDerivative(i_dx, i_ddx, i_dddx, i_dy, i_ddy, i_dddy);
   }
+}
+
+bool ReferenceLine::GetLaneWidth(const double s, double* const lane_left_width,
+                                 double* const lane_right_width) const {
+  *lane_left_width = ConfigParam::FLAGS_lane_left_width;
+  *lane_right_width = ConfigParam::FLAGS_lane_right_width;
+  return true;
 }
 
 // =======================备用方案=============================================
