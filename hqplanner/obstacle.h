@@ -3,11 +3,14 @@
 
 #include <assert.h>
 
+#include <algorithm>
+#include <cmath>
 #include <list>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "for_proto/config_param.h"
 #include "for_proto/perception_obstacle.h"
 #include "for_proto/pnc_point.h"
 #include "math/box2d.h"
@@ -17,8 +20,11 @@
 // #include "modules/prediction/proto/prediction_obstacle.pb.h"
 
 namespace hqplanner {
+using hqplanner::forproto::ConfigParam;
 using hqplanner::forproto::PerceptionObstacle;
+using hqplanner::forproto::Point;
 using hqplanner::forproto::TrajectoryPoint;
+using hqplanner::math::Box2d;
 using hqplanner::math::Polygon2d;
 using hqplanner::math::Vec2d;
 /**
@@ -45,7 +51,7 @@ class Obstacle {
   double Speed() const;
 
   bool IsStatic() const;
-  //   bool IsVirtual() const;
+  bool IsVirtual() const;
 
   //   TrajectoryPoint GetPointAtTime(const double time) const;
 
@@ -77,13 +83,12 @@ class Obstacle {
   //   static std::list<std::unique_ptr<Obstacle>> CreateObstacles(
   //       const prediction::PredictionObstacles &predictions);
 
-  //   static std::unique_ptr<Obstacle> CreateStaticVirtualObstacles(
-  //       const std::string &id, const common::math::Box2d &obstacle_box);
+  static std::unique_ptr<Obstacle> CreateStaticVirtualObstacles(
+      const std::string &id, const Box2d &obstacle_box);
 
   static bool IsStaticObstacle(const PerceptionObstacle &perception_obstacle);
 
-  //   static bool IsVirtualObstacle(
-  //       const perception::PerceptionObstacle &perception_obstacle);
+  static bool IsVirtualObstacle(const PerceptionObstacle &perception_obstacle);
 
   //   static bool IsValidTrajectoryPoint(const common::TrajectoryPoint &point);
 
@@ -93,7 +98,7 @@ class Obstacle {
   std::string id_;
   std::int32_t perception_id_ = 0;
   bool is_static_ = true;
-  //   bool is_virtual_ = false;
+  bool is_virtual_ = false;
   double speed_ = 0.0;
   std::vector<TrajectoryPoint> trajectory_;
   PerceptionObstacle perception_obstacle_;
@@ -125,6 +130,7 @@ Obstacle::Obstacle(const std::string &id,
 
   is_static_ = IsStaticObstacle(perception_obstacle);
 
+  is_virtual_ = IsVirtualObstacle(perception_obstacle);
   speed_ = std::hypot(perception_obstacle.velocity.x,
                       perception_obstacle.velocity.y);
 }
@@ -160,6 +166,49 @@ math::Box2d Obstacle::GetBoundingBox() const {
   return perception_bounding_box_;
 }
 
+std::unique_ptr<Obstacle> Obstacle::CreateStaticVirtualObstacles(
+    const std::string &id, const Box2d &obstacle_box) {
+  // create a "virtual" perception_obstacle
+  PerceptionObstacle perception_obstacle;
+  // simulator needs a valid integer
+  int32_t negative_id = std::hash<std::string>{}(id);
+  // set the first bit to 1 so negative_id became negative number
+  negative_id |= (0x1 << 31);
+  perception_obstacle.id = negative_id;
+  perception_obstacle.position.x = obstacle_box.center().x();
+  perception_obstacle.position.y = obstacle_box.center().y();
+
+  // perception_obstacle.mutable_position()->set_x(obstacle_box.center().x());
+  // perception_obstacle.mutable_position()->set_y(obstacle_box.center().y());
+  perception_obstacle.theta = obstacle_box.heading();
+
+  perception_obstacle.velocity.x = 0;
+  perception_obstacle.velocity.y = 0;
+
+  perception_obstacle.length = obstacle_box.length();
+  perception_obstacle.width = obstacle_box.width();
+  perception_obstacle.height = ConfigParam::FLAGS_virtual_stop_wall_height;
+  perception_obstacle.type = PerceptionObstacle::UNKNOWN_UNMOVABLE;
+  perception_obstacle.tracking_time = 1.0;
+
+  std::vector<Vec2d> corner_points;
+  obstacle_box.GetAllCorners(&corner_points);
+  for (const auto &corner_point : corner_points) {
+    Point point = {corner_point.x(), corner_point.y(), 0};
+    perception_obstacle.polygon_point.emplace_back(std::move(point));
+    // auto *point = perception_obstacle.add_polygon_point();
+    // point->set_x(corner_point.x());
+    // point->set_y(corner_point.y());
+  }
+  auto *obstacle = new Obstacle(id, perception_obstacle);
+  obstacle->is_virtual_ = true;
+  return std::unique_ptr<Obstacle>(obstacle);
+}
+bool Obstacle::IsVirtual() const { return is_virtual_; }
+bool Obstacle::IsVirtualObstacle(
+    const PerceptionObstacle &perception_obstacle) {
+  return perception_obstacle.id < 0;
+}
 }  // namespace hqplanner
 
 #endif  // MODULES_PLANNING_COMMON_OBSTACLE_H_

@@ -14,25 +14,31 @@
 #include "for_proto/perception_obstacle.h"
 #include "for_proto/pnc_point.h"
 #include "for_proto/prediction_obstacle.h"
+#include "for_proto/vehicle_config.h"
 #include "for_proto/vehicle_state.h"
 #include "math/box2d.h"
 #include "math/indexed_queue.h"
+#include "math/line_segment2d.h"
 #include "math/vec2d.h"
 #include "obstacle.h"
 #include "reference_line.h"
 #include "reference_line_info.h"
 #include "reference_line_provider.h"
+#include "vehicle_state_provider.h"
 namespace hqplanner {
 using hqplanner::forproto::ADCTrajectory;
+using hqplanner::forproto::ConfigParam;
 using hqplanner::forproto::PerceptionObstacle;
 using hqplanner::forproto::PerceptionObstacles;
 using hqplanner::forproto::PredictionObstacles;
+using hqplanner::forproto::SLPoint;
 using hqplanner::forproto::TrajectoryPoint;
+using hqplanner::forproto::VehicleParam;
 using hqplanner::forproto::VehicleState;
 using hqplanner::math::Box2d;
 using hqplanner::math::IndexedQueue;
+using hqplanner::math::LineSegment2d;
 using hqplanner::math::Vec2d;
-
 class Frame {
  public:
   Frame() = default;
@@ -126,6 +132,8 @@ class Frame {
   ReferenceLineProvider *reference_line_provider_ = nullptr;
 };
 // =============================函数实现=================================
+
+constexpr double kMathEpsilon = 1e-8;
 Frame::Frame(uint32_t sequence_num, const TrajectoryPoint &planning_start_point,
              const double start_time, const VehicleState &vehicle_state,
              ReferenceLineProvider *reference_line_provider)
@@ -168,6 +176,50 @@ const Obstacle *Frame::CreateStopObstacle(
   return CreateStaticVirtualObstacle(obstacle_id, stop_wall_box);
 }
 
+const Obstacle *Frame::CreateStaticObstacle(
+    ReferenceLineInfo *const reference_line_info,
+    const std::string &obstacle_id, const double obstacle_start_s,
+    const double obstacle_end_s) {
+  if (reference_line_info == nullptr) {
+    // AERROR << "reference_line_info nullptr";
+    return nullptr;
+  }
+
+  const auto &reference_line = reference_line_info->reference_line();
+
+  // start_xy
+  SLPoint sl_point;
+  sl_point.s = obstacle_start_s;
+  sl_point.l = 0.0;
+  Vec2d obstacle_start_xy;
+  if (!reference_line.SLToXY(sl_point, &obstacle_start_xy)) {
+    // AERROR << "Failed to get start_xy from sl: " << sl_point.DebugString();
+    return nullptr;
+  }
+
+  // end_xy
+  sl_point.s = obstacle_end_s;
+  sl_point.l = 0.0;
+  Vec2d obstacle_end_xy;
+  if (!reference_line.SLToXY(sl_point, &obstacle_end_xy)) {
+    // AERROR << "Failed to get end_xy from sl: " << sl_point.DebugString();
+    return nullptr;
+  }
+
+  double left_lane_width = 0.0;
+  double right_lane_width = 0.0;
+  if (!reference_line.GetLaneWidth(obstacle_start_s, &left_lane_width,
+                                   &right_lane_width)) {
+    // AERROR << "Failed to get lane width at s[" << obstacle_start_s << "]";
+    return nullptr;
+  }
+
+  Box2d obstacle_box{LineSegment2d(obstacle_start_xy, obstacle_end_xy),
+                     left_lane_width + right_lane_width};
+
+  return CreateStaticVirtualObstacle(obstacle_id, obstacle_box);
+}
+
 const Obstacle *Frame::CreateStaticVirtualObstacle(const std::string &id,
                                                    const Box2d &box) {
   auto object = obstacles_.find(id);
@@ -175,12 +227,104 @@ const Obstacle *Frame::CreateStaticVirtualObstacle(const std::string &id,
     // AWARN << "obstacle " << id << " already exist.";
     return &(object->second);
   }
-  auto *ptr = obstacles_.insert(
+
+  obstacles_.insert(
       std::make_pair(id, *Obstacle::CreateStaticVirtualObstacles(id, box)));
-  if (!ptr) {
-    AERROR << "Failed to create virtual obstacle " << id;
+  return &obstacles_.at(id);
+}
+
+bool Frame::Init() {
+  // hdmap_ = hdmap::HDMapUtil::BaseMapPtr();
+  vehicle_state_ = VehicleStateProvider::vehicle_state_;
+
+  // prediction
+  // if (FLAGS_enable_prediction && AdapterManager::GetPrediction() &&
+  //     !AdapterManager::GetPrediction()->Empty()) {
+  //   if (FLAGS_enable_lag_prediction && lag_predictor_) {
+  //     lag_predictor_->GetLaggedPrediction(&prediction_);
+  //   } else {
+  //     prediction_.CopyFrom(
+  //         AdapterManager::GetPrediction()->GetLatestObserved());
+  //   }
+  //   if (FLAGS_align_prediction_time) {
+  //     AlignPredictionTime(vehicle_state_.timestamp(), &prediction_);
+  //   }
+  //   for (auto &ptr : Obstacle::CreateObstacles(prediction_)) {
+  //     AddObstacle(*ptr);
+  //   }
+  // }
+  const auto *collision_obstacle = FindCollisionObstacle();
+  if (collision_obstacle) {
+    // std::string err_str =
+    //     "Found collision with obstacle: " + collision_obstacle->Id();
+    // apollo::common::monitor::MonitorLogBuffer buffer(&monitor_logger_);
+    // buffer.ERROR(err_str);
+    // return Status(ErrorCode::PLANNING_ERROR, err_str);
+    return false;
   }
-  return ptr;
+  if (!CreateReferenceLineInfo()) {
+    // AERROR << "Failed to init reference line info";
+    // return Status(ErrorCode::PLANNING_ERROR,
+    //               "failed to init reference line info");
+    return false;
+  }
+
+  // return Status::OK();
+  return true;
+}
+
+const Obstacle *Frame::FindCollisionObstacle() const {
+  if (obstacles_.empty()) {
+    return nullptr;
+  }
+  const VehicleParam param;
+  // const auto &param =
+  //     common::VehicleConfigHelper::instance()->GetConfig().vehicle_param();
+  Vec2d position(vehicle_state_.x, vehicle_state_.y);
+  Vec2d vec_to_center(
+      (param.front_edge_to_center - param.back_edge_to_center) / 2.0,
+      (param.left_edge_to_center - param.right_edge_to_center) / 2.0);
+  Vec2d center(position + vec_to_center.rotate(vehicle_state_.heading));
+  Box2d adc_box(center, vehicle_state_.heading, param.length, param.width);
+  const double adc_half_diagnal = adc_box.diagonal() / 2.0;
+
+  std::unordered_map<std::string, Obstacle>::const_iterator cit =
+      obstacles_.begin();
+  for (; cit != obstacles_.end(); ++cit) {
+    const auto &obstacle = cit->second;
+    if (obstacle.IsVirtual()) {
+      continue;
+    }
+
+    double center_dist =
+        adc_box.center().DistanceTo(obstacle.PerceptionBoundingBox().center());
+    if (center_dist > obstacle.PerceptionBoundingBox().diagonal() / 2.0 +
+                          adc_half_diagnal +
+                          ConfigParam::FLAGS_max_collision_distance) {
+      // ADEBUG << "Obstacle : " << obstacle->Id() << " is too far to collide";
+      continue;
+    }
+    double distance = obstacle.PerceptionPolygon().DistanceTo(adc_box);
+    // if (FLAGS_ignore_overlapped_obstacle && distance < kMathEpsilon) {
+    //   bool all_points_in = true;
+    //   for (const auto &point : obstacle->PerceptionPolygon().points()) {
+    //     if (!adc_box.IsPointIn(point)) {
+    //       all_points_in = false;
+    //       break;
+    //     }
+    //   }
+    //   if (all_points_in) {
+    //     ADEBUG << "Skip overlapped obstacle, which is often caused by lidar "
+    //               "calibration error";
+    //     continue;
+    //   }
+    // }
+    if (distance < ConfigParam::FLAGS_max_collision_distance) {
+      // AERROR << "Found collision with obstacle " << obstacle->Id();
+      return &obstacle;
+    }
+  }
+  return nullptr;
 }
 
 // ===================FrameHistory======================================

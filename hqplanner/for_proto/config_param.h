@@ -15,6 +15,8 @@ struct ConfigParam {
   static const double FLAGS_lane_left_width;
   static const double FLAGS_lane_right_width;
   static const double FLAGS_virtual_stop_wall_length;
+  static const double FLAGS_virtual_stop_wall_height;
+  static const double FLAGS_max_collision_distance;
 };
 
 const double ConfigParam::FLAGS_st_max_s = 40;
@@ -25,6 +27,9 @@ const std::size_t ConfigParam::FLAGS_max_history_frame_num = 2;
 const double ConfigParam::FLAGS_lane_left_width = 2.0;
 const double ConfigParam::FLAGS_lane_right_width = 2.0;
 const double ConfigParam::FLAGS_virtual_stop_wall_length = 0.1;
+const double ConfigParam::FLAGS_virtual_stop_wall_height = 2.0;
+const double ConfigParam::FLAGS_max_collision_distance = 0.1;
+
 }  // namespace forproto
 }  // namespace hqplanner
 
