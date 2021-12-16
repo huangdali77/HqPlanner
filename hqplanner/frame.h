@@ -327,6 +327,82 @@ const Obstacle *Frame::FindCollisionObstacle() const {
   return nullptr;
 }
 
+bool Frame::CreateReferenceLineInfo() {
+  std::list<ReferenceLine> reference_lines;
+  // std::list<hdmap::RouteSegments> segments;
+  if (!reference_line_provider_->GetReferenceLines(&reference_lines,
+                                                   &segments)) {
+    AERROR << "Failed to create reference line";
+    return false;
+  }
+  DCHECK_EQ(reference_lines.size(), segments.size());
+
+  auto forword_limit =
+      ReferenceLineProvider::LookForwardDistance(vehicle_state_);
+
+  for (auto &ref_line : reference_lines) {
+    if (!ref_line.Shrink(Vec2d(vehicle_state_.x(), vehicle_state_.y()),
+                         FLAGS_look_backward_distance, forword_limit)) {
+      AERROR << "Fail to shrink reference line.";
+      return false;
+    }
+  }
+  for (auto &seg : segments) {
+    if (!seg.Shrink(Vec2d(vehicle_state_.x(), vehicle_state_.y()),
+                    FLAGS_look_backward_distance, forword_limit)) {
+      AERROR << "Fail to shrink routing segments.";
+      return false;
+    }
+  }
+
+  reference_line_info_.clear();
+  auto ref_line_iter = reference_lines.begin();
+  auto segments_iter = segments.begin();
+  while (ref_line_iter != reference_lines.end()) {
+    if (segments_iter->StopForDestination()) {
+      is_near_destination_ = true;
+    }
+    reference_line_info_.emplace_back(vehicle_state_, planning_start_point_,
+                                      *ref_line_iter, *segments_iter);
+    ++ref_line_iter;
+    ++segments_iter;
+  }
+
+  if (FLAGS_enable_change_lane_decider &&
+      !change_lane_decider_.Apply(&reference_line_info_)) {
+    AERROR << "Failed to apply change lane decider";
+    return false;
+  }
+
+  if (reference_line_info_.size() == 2) {
+    common::math::Vec2d xy_point(vehicle_state_.x(), vehicle_state_.y());
+    common::SLPoint first_sl;
+    if (!reference_line_info_.front().reference_line().XYToSL(xy_point,
+                                                              &first_sl)) {
+      return false;
+    }
+    common::SLPoint second_sl;
+    if (!reference_line_info_.back().reference_line().XYToSL(xy_point,
+                                                             &second_sl)) {
+      return false;
+    }
+    const double offset = first_sl.l() - second_sl.l();
+    reference_line_info_.front().SetOffsetToOtherReferenceLine(offset);
+    reference_line_info_.back().SetOffsetToOtherReferenceLine(-offset);
+  }
+
+  bool has_valid_reference_line = false;
+  for (auto &ref_info : reference_line_info_) {
+    if (!ref_info.Init(obstacles())) {
+      AERROR << "Failed to init reference line";
+      continue;
+    } else {
+      has_valid_reference_line = true;
+    }
+  }
+  return has_valid_reference_line;
+}
+
 // ===================FrameHistory======================================
 class FrameHistory {
  public:
