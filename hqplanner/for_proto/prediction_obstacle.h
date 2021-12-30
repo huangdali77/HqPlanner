@@ -23,9 +23,9 @@ struct PredictionObstacles {
   // make prediction for multiple obstacles
   std::vector<PredictionObstacle> prediction_obstacle;
   // start timestamp
-  double start_timestamp = 4;
+  double start_timestamp;
   // end timestamp
-  double end_timestamp = 5;
+  double end_timestamp;
 }
 
 }  // namespace forproto

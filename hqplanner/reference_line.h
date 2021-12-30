@@ -65,6 +65,7 @@ class ReferenceLine {
                                 SLBoundary* const sl_boundary) const;
   bool GetLaneWidth(const double s, double* const lane_left_width,
                     double* const lane_right_width) const;
+  bool Shrink(const Vec2d& point, double look_backward, double look_forward);
 
  private:
   std::vector<AnchorPoint> anchor_points_;
@@ -73,7 +74,13 @@ class ReferenceLine {
   std::vector<double> anchor_points_s_;
   CubicSpline anchor_points_x_s_;
   CubicSpline anchor_points_y_s_;
+  //根据当前需要从长的参考线中shrink出一段，reference_points_需要在每一帧都要根据reference_line_points_更新
   std::vector<ReferencePoint> reference_line_points_;
+
+  //根据上游给的anchor points生成的长的参考线，只有上游给的anchor
+  // point有更新时route_points_才需要更新,也就是调用ConstructReferenceLineByFixedStep()函数
+  std::vector<ReferencePoint> route_points_;
+  std::vector<double> accumulated_s_;  // step = 0.1m
 };
 
 // =========================函数实现==================================================================
@@ -92,7 +99,7 @@ ReferenceLine::ReferenceLine(const std::vector<double>& x,
   AccumulateOnS();
   anchor_points_x_s_ = CubicSpline(anchor_points_s_, anchor_points_x_);
   anchor_points_y_s_ = CubicSpline(anchor_points_s_, anchor_points_y_);
-  ConstructReferenceLineByFixedStep();  //供寻找最近点使用
+  ConstructReferenceLineByFixedStep();  //根据上游信息给出路由信息，供寻找最近点使用，
 }
 
 void ReferenceLine::AccumulateOnS() {
@@ -334,12 +341,13 @@ bool ReferenceLine::GetApproximateSLBoundary(
 }
 
 void ReferenceLine::ConstructReferenceLineByFixedStep() {
-  int reference_line_points_num =
-      int(anchor_points_s_.back() / REFERENCE_LINE_SAMPLE_STEP);
+  int reference_line_points_num = int(
+      anchor_points_s_.back() / ConfigParam::FLAGS_reference_line_sample_step);
   std::vector<double> ref_s(reference_line_points_num, 0);
   for (int i = 1; i < ref_s.size(); ++i) {
-    ref_s[i] = ref_s[i - 1] + REFERENCE_LINE_SAMPLE_STEP;
+    ref_s[i] = ref_s[i - 1] + ConfigParam::FLAGS_reference_line_sample_step;
   }
+  accumulated_s_ = ref_s;
   for (auto i_s : ref_s) {
     reference_line_points_.emplace_back();
     reference_line_points_.back().s = i_s;
@@ -368,12 +376,49 @@ void ReferenceLine::ConstructReferenceLineByFixedStep() {
     reference_line_points_.back().dkappa =
         ComputeCurvatureDerivative(i_dx, i_ddx, i_dddx, i_dy, i_ddy, i_dddy);
   }
+  route_points_ = reference_line_points_;
 }
 
 bool ReferenceLine::GetLaneWidth(const double s, double* const lane_left_width,
                                  double* const lane_right_width) const {
   *lane_left_width = ConfigParam::FLAGS_lane_left_width;
   *lane_right_width = ConfigParam::FLAGS_lane_right_width;
+  return true;
+}
+
+bool ReferenceLine::Shrink(const Vec2d& point, double look_backward,
+                           double look_forward) {
+  reference_line_points_ = route_points_;
+  SLPoint sl;
+  if (!XYToSL(point, &sl)) {
+    // AERROR << "Failed to project point: " << point.DebugString();
+    return false;
+  }
+  // const auto& accumulated_s = map_path_.accumulated_s();
+  size_t start_index = 0;
+  if (sl.s > look_backward) {
+    auto it_lower = std::lower_bound(
+        accumulated_s_.begin(), accumulated_s_.end(), sl.s - look_backward);
+    start_index = std::distance(accumulated_s_.begin(), it_lower);
+  }
+  size_t end_index = accumulated_s_.size();
+  if (sl.s + look_forward < Length()) {
+    auto start_it = accumulated_s_.begin();
+    std::advance(start_it, start_index);
+    auto it_higher =
+        std::upper_bound(start_it, accumulated_s_.end(), sl.s + look_forward);
+    end_index = std::distance(accumulated_s_.begin(), it_higher);
+  }
+  reference_line_points_.erase(reference_line_points_.begin() + end_index,
+                               reference_line_points_.end());
+  reference_line_points_.erase(reference_line_points_.begin(),
+                               reference_line_points_.begin() + start_index);
+  if (reference_line_points_.size() < 2) {
+    // AERROR << "Too few reference points after shrinking.";
+    return false;
+  }
+  // map_path_ = MapPath(std::move(std::vector<hdmap::MapPathPoint>(
+  //     reference_points_.begin(), reference_points_.end())));
   return true;
 }
 
