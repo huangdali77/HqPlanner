@@ -1,4 +1,5 @@
-
+#ifndef HQPLANNER_FOR_PROTO_PREDICTION_OBSTACLE_H_
+#define HQPLANNER_FOR_PROTO_PREDICTION_OBSTACLE_H_
 #include <vector>
 
 #include "perception_obstacle.h";
@@ -30,3 +31,4 @@ struct PredictionObstacles {
 
 }  // namespace forproto
 }  // namespace hqplanner
+#endif

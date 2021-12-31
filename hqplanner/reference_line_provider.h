@@ -18,7 +18,7 @@ class ReferenceLineProvider {
   static double LookForwardDistance(const VehicleState& state);
 
  private:
-  std ::list<ReferenceLine> reference_lines_;
+  std::list<ReferenceLine> reference_lines_;
 };
 
 // ==========================函数实现===========================

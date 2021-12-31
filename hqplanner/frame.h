@@ -24,8 +24,10 @@
 #include "reference_line.h"
 #include "reference_line_info.h"
 #include "reference_line_provider.h"
+#include "subscribe.h"
 #include "vehicle_state_provider.h"
 namespace hqplanner {
+using hqplanner::Subscribe;
 using hqplanner::forproto::ADCTrajectory;
 using hqplanner::forproto::ConfigParam;
 using hqplanner::forproto::PerceptionObstacle;
@@ -45,7 +47,8 @@ class Frame {
   explicit Frame(uint32_t sequence_num,
                  const TrajectoryPoint &planning_start_point,
                  const double start_time, const VehicleState &vehicle_state,
-                 ReferenceLineProvider *reference_line_provider);
+                 ReferenceLineProvider *reference_line_provider,
+                 Subscribe subscribe_info);
 
   const TrajectoryPoint &PlanningStartPoint() const;
   bool Init();
@@ -115,6 +118,7 @@ class Frame {
   void AddObstacle(const Obstacle &obstacle);
 
  private:
+  Subscribe subscribe_info_;
   uint32_t sequence_num_;
   TrajectoryPoint planning_start_point_;
   double start_time_;
@@ -136,12 +140,16 @@ class Frame {
 constexpr double kMathEpsilon = 1e-8;
 Frame::Frame(uint32_t sequence_num, const TrajectoryPoint &planning_start_point,
              const double start_time, const VehicleState &vehicle_state,
-             ReferenceLineProvider *reference_line_provider)
+             ReferenceLineProvider *reference_line_provider,
+             Subscribe subscribe_info)
     : sequence_num_(sequence_num),
       planning_start_point_(planning_start_point),
       start_time_(start_time),
       vehicle_state_(vehicle_state),
-      reference_line_provider_(reference_line_provider) {}
+      reference_line_provider_(reference_line_provider),
+      subscribe_info_(subscribe_info) {
+  prediction_ = subscribe_info_.GetPredictionObstacles();
+}
 
 const TrajectoryPoint &Frame::PlanningStartPoint() const {
   return planning_start_point_;
@@ -234,32 +242,19 @@ const Obstacle *Frame::CreateStaticVirtualObstacle(const std::string &id,
 }
 
 bool Frame::Init() {
+  vehicle_state_ = subscribe_info_.GetVehicleState();
   // hdmap_ = hdmap::HDMapUtil::BaseMapPtr();
-  vehicle_state_ = VehicleStateProvider::vehicle_state_;
+  // vehicle_state_ = VehicleStateProvider::vehicle_state_;
 
   // prediction
-  // if (FLAGS_enable_prediction && AdapterManager::GetPrediction() &&
-  //     !AdapterManager::GetPrediction()->Empty()) {
-  //   if (FLAGS_enable_lag_prediction && lag_predictor_) {
-  //     lag_predictor_->GetLaggedPrediction(&prediction_);
-  //   } else {
-  //     prediction_.CopyFrom(
-  //         AdapterManager::GetPrediction()->GetLatestObserved());
-  //   }
-  //   if (FLAGS_align_prediction_time) {
-  //     AlignPredictionTime(vehicle_state_.timestamp(), &prediction_);
-  //   }
-  //   for (auto &ptr : Obstacle::CreateObstacles(prediction_)) {
-  //     AddObstacle(*ptr);
-  //   }
-  // }
+  if (!prediction_.prediction_obstacle.empty()) {
+    for (auto &ptr : Obstacle::CreateObstacles(prediction_)) {
+      AddObstacle(*ptr);
+    }
+  }
+
   const auto *collision_obstacle = FindCollisionObstacle();
   if (collision_obstacle) {
-    // std::string err_str =
-    //     "Found collision with obstacle: " + collision_obstacle->Id();
-    // apollo::common::monitor::MonitorLogBuffer buffer(&monitor_logger_);
-    // buffer.ERROR(err_str);
-    // return Status(ErrorCode::PLANNING_ERROR, err_str);
     return false;
   }
   if (!CreateReferenceLineInfo()) {
@@ -301,20 +296,7 @@ const Obstacle *Frame::FindCollisionObstacle() const {
       continue;
     }
     double distance = obstacle.PerceptionPolygon().DistanceTo(adc_box);
-    // if (FLAGS_ignore_overlapped_obstacle && distance < kMathEpsilon) {
-    //   bool all_points_in = true;
-    //   for (const auto &point : obstacle->PerceptionPolygon().points()) {
-    //     if (!adc_box.IsPointIn(point)) {
-    //       all_points_in = false;
-    //       break;
-    //     }
-    //   }
-    //   if (all_points_in) {
-    //     ADEBUG << "Skip overlapped obstacle, which is often caused by lidar "
-    //               "calibration error";
-    //     continue;
-    //   }
-    // }
+
     if (distance < ConfigParam::FLAGS_max_collision_distance) {
       // AERROR << "Found collision with obstacle " << obstacle->Id();
       return &obstacle;
@@ -388,6 +370,10 @@ bool Frame::CreateReferenceLineInfo() {
     }
   }
   return has_valid_reference_line;
+}
+
+void Frame::AddObstacle(const Obstacle &obstacle) {
+  obstacles_.insert({obstacle.Id(), obstacle});
 }
 
 // ===================FrameHistory======================================

@@ -13,6 +13,7 @@
 #include "for_proto/config_param.h"
 #include "for_proto/perception_obstacle.h"
 #include "for_proto/pnc_point.h"
+#include "for_proto/prediction_obstacle.h"
 #include "math/box2d.h"
 #include "math/polygon2d.h"
 #include "math/vec2d.h"
@@ -23,6 +24,7 @@ namespace hqplanner {
 using hqplanner::forproto::ConfigParam;
 using hqplanner::forproto::PerceptionObstacle;
 using hqplanner::forproto::Point;
+using hqplanner::forproto::PredictionObstacles;
 using hqplanner::forproto::TrajectoryPoint;
 using hqplanner::math::Box2d;
 using hqplanner::math::Polygon2d;
@@ -80,8 +82,8 @@ class Obstacle {
    * @param predictions The prediction results
    * @return obstacles The output obstacles saved in a list of unique_ptr.
    */
-  //   static std::list<std::unique_ptr<Obstacle>> CreateObstacles(
-  //       const prediction::PredictionObstacles &predictions);
+  static std::list<std::unique_ptr<Obstacle>> CreateObstacles(
+      const prediction::PredictionObstacles &predictions);
 
   static std::unique_ptr<Obstacle> CreateStaticVirtualObstacles(
       const std::string &id, const Box2d &obstacle_box);
@@ -205,10 +207,33 @@ std::unique_ptr<Obstacle> Obstacle::CreateStaticVirtualObstacles(
   return std::unique_ptr<Obstacle>(obstacle);
 }
 bool Obstacle::IsVirtual() const { return is_virtual_; }
+
 bool Obstacle::IsVirtualObstacle(
     const PerceptionObstacle &perception_obstacle) {
   return perception_obstacle.id < 0;
 }
+
+std::list<std::unique_ptr<Obstacle>> Obstacle::CreateObstacles(
+    const PredictionObstacles &predictions) {
+  std::list<std::unique_ptr<Obstacle>> obstacles;
+
+  for (const auto &prediction_obstacle : predictions.prediction_obstacle) {
+    const auto perception_id =
+        std::to_string(prediction_obstacle.perception_obstacle.id);
+
+    if (prediction_obstacle.trajectory.empty()) {
+      obstacles.emplace_back(
+          new Obstacle(perception_id, prediction_obstacle.perception_obstacle));
+      continue;
+    }
+
+    obstacles.emplace_back(
+        new Obstacle(perception_id, prediction_obstacle.perception_obstacle,
+                     prediction_obstacle.trajectory.front()));
+  }
+  return obstacles;
+}
+
 }  // namespace hqplanner
 
 #endif  // MODULES_PLANNING_COMMON_OBSTACLE_H_
