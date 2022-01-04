@@ -47,8 +47,7 @@ class Frame {
   explicit Frame(uint32_t sequence_num,
                  const TrajectoryPoint &planning_start_point,
                  const double start_time, const VehicleState &vehicle_state,
-                 ReferenceLineProvider *reference_line_provider,
-                 Subscribe subscribe_info);
+                 ReferenceLineProvider *reference_line_provider);
 
   const TrajectoryPoint &PlanningStartPoint() const;
   bool Init();
@@ -118,7 +117,7 @@ class Frame {
   void AddObstacle(const Obstacle &obstacle);
 
  private:
-  Subscribe subscribe_info_;
+  // Subscribe subscribe_info_;
   uint32_t sequence_num_;
   TrajectoryPoint planning_start_point_;
   double start_time_;
@@ -140,15 +139,14 @@ class Frame {
 constexpr double kMathEpsilon = 1e-8;
 Frame::Frame(uint32_t sequence_num, const TrajectoryPoint &planning_start_point,
              const double start_time, const VehicleState &vehicle_state,
-             ReferenceLineProvider *reference_line_provider,
-             Subscribe subscribe_info)
+             ReferenceLineProvider *reference_line_provider)
     : sequence_num_(sequence_num),
       planning_start_point_(planning_start_point),
       start_time_(start_time),
       vehicle_state_(vehicle_state),
-      reference_line_provider_(reference_line_provider),
-      subscribe_info_(subscribe_info) {
-  prediction_ = subscribe_info_.GetPredictionObstacles();
+      reference_line_provider_(reference_line_provider) {
+  prediction_ = Subscribe::prediction_obstacles_;
+  // prediction_ = subscribe_info_.GetPredictionObstacles();
 }
 
 const TrajectoryPoint &Frame::PlanningStartPoint() const {
@@ -242,7 +240,7 @@ const Obstacle *Frame::CreateStaticVirtualObstacle(const std::string &id,
 }
 
 bool Frame::Init() {
-  vehicle_state_ = subscribe_info_.GetVehicleState();
+  vehicle_state_ = Subscribe::vehicle_state_;
   // hdmap_ = hdmap::HDMapUtil::BaseMapPtr();
   // vehicle_state_ = VehicleStateProvider::vehicle_state_;
 
