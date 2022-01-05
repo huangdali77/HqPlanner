@@ -1,9 +1,10 @@
 #ifndef HQPLANNER_MATH_VEC2D_H_
 #define HQPLANNER_MATH_VEC2D_H_
 
+#include <assert.h>
+
 #include <cmath>
 #include <string>
-
 namespace hqplanner {
 namespace math {
 constexpr double kMathEpsilon = 1e-10;
@@ -158,6 +159,7 @@ Vec2d Vec2d::operator*(const double ratio) const {
 
 Vec2d Vec2d::operator/(const double ratio) const {
   //   CHECK_GT(std::abs(ratio), kMathEpsilon);  避免除0
+  assert(std::abs(ratio) > kMathEpsilon);
   return Vec2d(x_ / ratio, y_ / ratio);
 }
 
@@ -181,6 +183,7 @@ Vec2d &Vec2d::operator*=(const double ratio) {
 
 Vec2d &Vec2d::operator/=(const double ratio) {
   //   CHECK_GT(std::abs(ratio), kMathEpsilon);避免除0
+  assert(std::abs(ratio) > kMathEpsilon);
   x_ /= ratio;
   y_ /= ratio;
   return *this;

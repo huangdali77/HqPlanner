@@ -283,6 +283,7 @@ PathObstacle* ReferenceLineInfo::AddObstacle(const Obstacle* obstacle) {
   return path_obstacle;
 }
 
+void ReferenceLineInfo::SetDrivable(bool drivable) { is_drivable_ = drivable; }
 const PathData& ReferenceLineInfo::path_data() const { return path_data_; }
 
 const SpeedData& ReferenceLineInfo::speed_data() const { return speed_data_; }

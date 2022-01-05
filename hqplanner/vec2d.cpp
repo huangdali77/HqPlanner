@@ -1,4 +1,4 @@
-#include "hqplanner/vec2d.h"
+#include "hqplanner/math/vec2d.h"
 
 Vec2d Vec2d::CreateUnitVec2d(const double angle) {
   return Vec2d(cos(angle), sin(angle));
@@ -78,7 +78,7 @@ Vec2d &Vec2d::operator*=(const double ratio) {
 
 Vec2d &Vec2d::operator/=(const double ratio) {
   //   CHECK_GT(std::abs(ratio), kMathEpsilon);避免除0
-  x_ /= ratio;
+  assert() x_ /= ratio;
   y_ /= ratio;
   return *this;
 }

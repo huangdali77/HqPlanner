@@ -30,8 +30,8 @@ double REFERENCE_LINE_SAMPLE_STEP = 0.1;
 class ReferenceLine {
  public:
   ReferenceLine() = default;
-  explicit ReferenceLine(const std::vector<double>& x,
-                         const std::vector<double>& y);
+  ReferenceLine(const std::vector<double>& x, const std::vector<double>& y);
+  explicit ReferenceLine(const std::vector<AnchorPoint> anchor_points);
 
   void AccumulateOnS();
   void ConstructReferenceLineByFixedStep();
@@ -84,6 +84,17 @@ class ReferenceLine {
 };
 
 // =========================函数实现==================================================================
+
+ReferenceLine::ReferenceLine(const std::vector<AnchorPoint> anchor_points) {
+  std::vector<double> x;
+  std::vector<double> y;
+  for (auto anchor_point : anchor_points) {
+    x.push_back(anchor_point.cartesian_x);
+    y.push_back(anchor_point.cartesian_y);
+  }
+
+  ReferenceLine(x, y);
+}
 
 ReferenceLine::ReferenceLine(const std::vector<double>& x,
                              const std::vector<double>& y)

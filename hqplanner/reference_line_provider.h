@@ -14,7 +14,7 @@ class ReferenceLineProvider {
  public:
   explicit ReferenceLineProvider(
       std::vector<std::vector<AnchorPoint>> anchor_points);
-  bool AddReferenceLine(ReferenceLine& ref_line) {
+  bool AddReferenceLine(ReferenceLine ref_line) {
     reference_lines_.emplace_back(ref_line);
   }
 
@@ -31,7 +31,12 @@ class ReferenceLineProvider {
 
 ReferenceLineProvider::ReferenceLineProvider(
     std::vector<std::vector<AnchorPoint>> anchor_points)
-    : anchor_points_(anchor_points) {}
+    : anchor_points_(anchor_points) {
+  for (auto anchor_points : anchor_points_) {
+    ReferenceLine ref(anchor_points);
+    AddReferenceLine(ref);
+  }
+}
 
 bool ReferenceLineProvider::GetReferenceLines(
     std::list<ReferenceLine>* reference_lines) {
