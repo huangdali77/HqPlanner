@@ -28,7 +28,8 @@
 #include "hqplanner/math/curve1d/quintic_polynomial_curve1d.h"
 // #include "modules/planning/reference_line/reference_point.h"
 
-#include "modules/planning/tasks/dp_poly_path/trajectory_cost.h"
+// #include "modules/planning/tasks/dp_poly_path/trajectory_cost.h"
+#include "hqplanner/tasks/dp_poly_path/trajectory_cost.h"
 
 namespace apollo {
 namespace planning {
