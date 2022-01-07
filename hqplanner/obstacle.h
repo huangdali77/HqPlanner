@@ -25,10 +25,12 @@ using hqplanner::forproto::ConfigParam;
 using hqplanner::forproto::PerceptionObstacle;
 using hqplanner::forproto::Point;
 using hqplanner::forproto::PredictionObstacles;
+using hqplanner::forproto::Trajectory;
 using hqplanner::forproto::TrajectoryPoint;
 using hqplanner::math::Box2d;
 using hqplanner::math::Polygon2d;
 using hqplanner::math::Vec2d;
+
 /**
  * @class Obstacle
  *
@@ -41,9 +43,8 @@ class Obstacle {
   Obstacle(const std::string &id,
            const PerceptionObstacle &perception_obstacle);
 
-  //   Obstacle(const std::string &id,
-  //            const perception::PerceptionObstacle &perception,
-  //            const prediction::Trajectory &trajectory);
+  Obstacle(const std::string &id, const PerceptionObstacle &perception,
+           const Trajectory &trajectory);
 
   const std::string &Id() const;
   void SetId(const std::string &id) { id_ = id; }
@@ -55,9 +56,10 @@ class Obstacle {
   bool IsStatic() const;
   bool IsVirtual() const;
 
-  //   TrajectoryPoint GetPointAtTime(const double time) const;
+  TrajectoryPoint GetPointAtTime(const double time) const;
 
   math::Box2d GetBoundingBox() const;
+  math::Box2d GetBoundingBox(const TrajectoryPoint &point) const;
   /**
    * @brief get the perception bounding box
    */
@@ -69,7 +71,7 @@ class Obstacle {
    */
   const math::Polygon2d &PerceptionPolygon() const;
 
-  const std::vector<TrajectoryPoint> &Trajectory() const;
+  const forproto::Trajectory &Trajectory() const;
   //   TrajectoryPoint *AddTrajectoryPoint();
   //   bool HasTrajectory() const;
 
@@ -83,7 +85,7 @@ class Obstacle {
    * @return obstacles The output obstacles saved in a list of unique_ptr.
    */
   static std::list<std::unique_ptr<Obstacle>> CreateObstacles(
-      const prediction::PredictionObstacles &predictions);
+      const PredictionObstacles &predictions);
 
   static std::unique_ptr<Obstacle> CreateStaticVirtualObstacles(
       const std::string &id, const Box2d &obstacle_box);
@@ -102,7 +104,8 @@ class Obstacle {
   bool is_static_ = true;
   bool is_virtual_ = false;
   double speed_ = 0.0;
-  std::vector<TrajectoryPoint> trajectory_;
+  // std::vector<TrajectoryPoint> trajectory_;
+  forproto::Trajectory trajectory_;
   PerceptionObstacle perception_obstacle_;
   math::Box2d perception_bounding_box_;
   math::Polygon2d perception_polygon_;
@@ -158,14 +161,18 @@ const math::Polygon2d &Obstacle::PerceptionPolygon() const {
   return perception_polygon_;
 }
 
-const std::vector<TrajectoryPoint> &Obstacle::Trajectory() const {
-  return trajectory_;
-}
+const forproto::Trajectory &Obstacle::Trajectory() const { return trajectory_; }
 const math::Box2d &Obstacle::PerceptionBoundingBox() const {
   return perception_bounding_box_;
 }
 math::Box2d Obstacle::GetBoundingBox() const {
   return perception_bounding_box_;
+}
+
+math::Box2d Obstacle::GetBoundingBox(const TrajectoryPoint &point) const {
+  return math::Box2d({point.path_point.x, point.path_point.y},
+                     point.path_point.theta, perception_obstacle_.length,
+                     perception_obstacle_.width);
 }
 
 std::unique_ptr<Obstacle> Obstacle::CreateStaticVirtualObstacles(
@@ -232,6 +239,41 @@ std::list<std::unique_ptr<Obstacle>> Obstacle::CreateObstacles(
                      prediction_obstacle.trajectory.front()));
   }
   return obstacles;
+}
+
+TrajectoryPoint Obstacle::GetPointAtTime(const double relative_time) const {
+  const auto &points = trajectory_.trajectory_point;
+  if (points.size() < 2) {
+    TrajectoryPoint point;
+    point.path_point.x = perception_obstacle_.position.x;
+    point.path_point.y = perception_obstacle_.position.y;
+    point.path_point.z = perception_obstacle_.position.z;
+    point.path_point.theta = perception_obstacle_.theta;
+    point.path_point.s = 0.0;
+    point.path_point.kappa = 0.0;
+    point.path_point.dkappa = 0.0;
+    point.path_point.ddkappa = 0.0;
+    point.v = 0.0;
+    point.a = 0.0;
+    point.relative_time = 0.0;
+
+    return point;
+  } else {
+    auto comp = [](const TrajectoryPoint p, const double time) {
+      return p.relative_time < time;
+    };
+
+    auto it_lower =
+        std::lower_bound(points.begin(), points.end(), relative_time, comp);
+
+    if (it_lower == points.begin()) {
+      return *points.begin();
+    } else if (it_lower == points.end()) {
+      return *points.rbegin();
+    }
+    return math::InterpolateUsingLinearApproximation(*(it_lower - 1), *it_lower,
+                                                     relative_time);
+  }
 }
 
 }  // namespace hqplanner

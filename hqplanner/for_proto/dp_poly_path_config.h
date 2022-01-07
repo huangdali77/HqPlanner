@@ -15,16 +15,16 @@ struct DpPolyPathConfig {
   const double obstacle_collision_distance = 0.2;
   const double obstacle_risk_distance = 2.0;
   const double obstacle_collision_cost = 1e3;
-  double path_l_cost;
-  double path_dl_cost;
-  double path_ddl_cost = 14;
-  double path_l_cost_param_l0;
-  double path_l_cost_param_b;
-  double path_l_cost_param_k;
-  double path_out_lane_cost;
-  double path_end_l_cost;
-  double sidepass_distance;
-  int navigator_sample_num_each_level;
+  double path_l_cost = 6.5;
+  double path_dl_cost = 8e3;
+  double path_ddl_cost = 5e1;
+  double path_l_cost_param_l0 = 1.50;
+  double path_l_cost_param_b = 0.40;
+  double path_l_cost_param_k = 1.50;
+  double path_out_lane_cost = 1e8;
+  double path_end_l_cost = 1.0e4;
+  double sidepass_distance = 2.8;
+  int navigator_sample_num_each_level = 3;
 };
 
 }  // namespace forproto

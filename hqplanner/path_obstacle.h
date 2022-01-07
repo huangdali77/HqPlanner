@@ -129,6 +129,7 @@ const double kStBoundarySparseDeltaS = 1.0;  // meters
 const double kStBoundaryDeltaT = 0.05;       // seconds
 }  // namespace
 
+const Obstacle* PathObstacle::obstacle() const { return obstacle_; }
 const std::string& PathObstacle::Id() const { return id_; }
 
 PathObstacle::PathObstacle(const Obstacle* obstacle) : obstacle_(obstacle) {

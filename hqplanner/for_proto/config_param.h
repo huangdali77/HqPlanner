@@ -23,6 +23,8 @@ struct ConfigParam {
   static const double FLAGS_look_backward_distance;
   static const double FLAGS_reference_line_sample_step;
   static const int FLAGS_num_reference_points_near_destination;
+  static const double FLAGS_prediction_total_time;
+  static const double FLAGS_lateral_ignore_buffer;
 };
 
 const double ConfigParam::FLAGS_st_max_s = 40;
@@ -41,6 +43,8 @@ const double ConfigParam::FLAGS_look_forward_long_distance = 250.0;
 const double ConfigParam::FLAGS_look_backward_distance = 30.0;
 const double ConfigParam::FLAGS_reference_line_sample_step = 0.1;
 const int ConfigParam::FLAGS_num_reference_points_near_destination = 50;
+const double ConfigParam::FLAGS_prediction_total_time = 5.0;
+const double ConfigParam::FLAGS_lateral_ignore_buffer = 3.0;
 }  // namespace forproto
 }  // namespace hqplanner
 

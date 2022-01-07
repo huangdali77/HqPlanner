@@ -30,7 +30,7 @@ struct PerceptionObstacle {
   enum Type {
     UNKNOWN = 0,
     UNKNOWN_MOVABLE = 1,
-    UNKNOWN_UNMOVABLE = 2,
+    UNKNOWN_UNMOVABLE = 2,  //静止障碍物
     PEDESTRIAN = 3,  // Pedestrian, usually determined by moving behaviour.
     BICYCLE = 4,     // bike, motor bike
     VEHICLE = 5      // Passenger car or truck.

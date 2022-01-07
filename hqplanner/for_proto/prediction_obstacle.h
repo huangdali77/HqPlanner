@@ -27,7 +27,7 @@ struct PredictionObstacles {
   double start_timestamp;
   // end timestamp
   double end_timestamp;
-}
+};
 
 }  // namespace forproto
 }  // namespace hqplanner

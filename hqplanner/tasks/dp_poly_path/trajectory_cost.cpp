@@ -1,10 +1,11 @@
-// #include "modules/planning/tasks/dp_poly_path/trajectory_cost.h"
 #include "hqplanner/tasks/dp_poly_path/trajectory_cost.h"
 
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <utility>
+
+#include "hqplanner/for_proto/perception_obstacle.h"
 
 // #include "modules/common/proto/pnc_point.pb.h"
 
@@ -13,69 +14,70 @@
 #include "hqplanner/math/vec2d.h"
 // #include "modules/common/util/util.h"
 // #include "modules/planning/common/planning_gflags.h"
-
-namespace apollo {
-namespace planning {
-
-using apollo::common::TrajectoryPoint;
-using apollo::common::math::Box2d;
-using apollo::common::math::Sigmoid;
-using apollo::common::math::Vec2d;
+#include "hqplanner/for_proto/config_param.h"
+namespace hqplanner {
+namespace tasks {
+using hqplanner::forproto::ConfigParam;
+using hqplanner::forproto::PerceptionObstacle;
+using hqplanner::forproto::TrajectoryPoint;
+using hqplanner::math::Box2d;
+using hqplanner::math::Sigmoid;
+using hqplanner::math::Vec2d;
 
 TrajectoryCost::TrajectoryCost(
     const DpPolyPathConfig &config, const ReferenceLine &reference_line,
     const bool is_change_lane_path,
     const std::vector<const PathObstacle *> &obstacles,
-    const common::VehicleParam &vehicle_param,
-    const SpeedData &heuristic_speed_data, const common::SLPoint &init_sl_point)
+    const VehicleParam &vehicle_param, const SpeedData &heuristic_speed_data,
+    const SLPoint &init_sl_point)
     : config_(config),
       reference_line_(&reference_line),
       is_change_lane_path_(is_change_lane_path),
       vehicle_param_(vehicle_param),
       heuristic_speed_data_(heuristic_speed_data),
       init_sl_point_(init_sl_point) {
-  const float total_time =
-      std::min(heuristic_speed_data_.TotalTime(), FLAGS_prediction_total_time);
+  const float total_time = std::min(heuristic_speed_data_.TotalTime(),
+                                    ConfigParam::FLAGS_prediction_total_time);
 
-  num_of_time_stamps_ = static_cast<uint32_t>(
-      std::floor(total_time / config.eval_time_interval()));
+  num_of_time_stamps_ =
+      static_cast<uint32_t>(std::floor(total_time / config.eval_time_interval));
 
   for (const auto *ptr_path_obstacle : obstacles) {
-    if (ptr_path_obstacle->IsIgnore()) {
-      continue;
-    } else if (ptr_path_obstacle->LongitudinalDecision().has_stop()) {
-      continue;
-    }
+    // if (ptr_path_obstacle->IsIgnore()) {
+    //   continue;
+    // } else if (ptr_path_obstacle->LongitudinalDecision().has_stop()) {
+    //   continue;
+    // }
     const auto &sl_boundary = ptr_path_obstacle->PerceptionSLBoundary();
 
     const float adc_left_l =
-        init_sl_point_.l() + vehicle_param_.left_edge_to_center();
+        init_sl_point_.l + vehicle_param_.left_edge_to_center;
     const float adc_right_l =
-        init_sl_point_.l() - vehicle_param_.right_edge_to_center();
+        init_sl_point_.l - vehicle_param_.right_edge_to_center;
 
-    if (adc_left_l + FLAGS_lateral_ignore_buffer < sl_boundary.start_l() ||
-        adc_right_l - FLAGS_lateral_ignore_buffer > sl_boundary.end_l()) {
+    if (adc_left_l + ConfigParam::FLAGS_lateral_ignore_buffer <
+            sl_boundary.start_l ||
+        adc_right_l - ConfigParam::FLAGS_lateral_ignore_buffer >
+            sl_boundary.end_l) {
       continue;
     }
 
     const auto *ptr_obstacle = ptr_path_obstacle->obstacle();
     bool is_bycycle_or_pedestrian =
-        (ptr_obstacle->Perception().type() ==
-             perception::PerceptionObstacle::BICYCLE ||
-         ptr_obstacle->Perception().type() ==
-             perception::PerceptionObstacle::PEDESTRIAN);
+        (ptr_obstacle->Perception().type == PerceptionObstacle::BICYCLE ||
+         ptr_obstacle->Perception().type == PerceptionObstacle::PEDESTRIAN);
 
     if (Obstacle::IsVirtualObstacle(ptr_obstacle->Perception())) {
       // Virtual obstacle
       continue;
     } else if (Obstacle::IsStaticObstacle(ptr_obstacle->Perception()) ||
                is_bycycle_or_pedestrian) {
-      static_obstacle_sl_boundaries_.push_back(std::move(sl_boundary));
+      static_obstacle_sl_boundaries_.push_back(sl_boundary);
     } else {
       std::vector<Box2d> box_by_time;
       for (uint32_t t = 0; t <= num_of_time_stamps_; ++t) {
         TrajectoryPoint trajectory_point =
-            ptr_obstacle->GetPointAtTime(t * config.eval_time_interval());
+            ptr_obstacle->GetPointAtTime(t * config.eval_time_interval);
 
         Box2d obstacle_box = ptr_obstacle->GetBoundingBox(trajectory_point);
         constexpr float kBuff = 0.5;
@@ -95,9 +97,9 @@ ComparableCost TrajectoryCost::CalculatePathCost(
   ComparableCost cost;
   float path_cost = 0.0;
   std::function<float(const float)> quasi_softmax = [this](const float x) {
-    const float l0 = this->config_.path_l_cost_param_l0();
-    const float b = this->config_.path_l_cost_param_b();
-    const float k = this->config_.path_l_cost_param_k();
+    const float l0 = this->config_.path_l_cost_param_l0;
+    const float b = this->config_.path_l_cost_param_b;
+    const float k = this->config_.path_l_cost_param_k;
     return (b + std::exp(-k * (x - l0))) / (1.0 + std::exp(-k * (x - l0)));
   };
 
@@ -286,5 +288,5 @@ ComparableCost TrajectoryCost::Calculate(const QuinticPolynomialCurve1d &curve,
   return total_cost;
 }
 
-}  // namespace planning
-}  // namespace apollo
+}  // namespace tasks
+}  // namespace hqplanner
