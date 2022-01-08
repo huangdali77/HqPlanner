@@ -25,6 +25,8 @@ struct ConfigParam {
   static const int FLAGS_num_reference_points_near_destination;
   static const double FLAGS_prediction_total_time;
   static const double FLAGS_lateral_ignore_buffer;
+  static const double FLAGS_static_decision_nudge_l_buffer;
+  static const bool FLAGS_use_navigation_mode;
 };
 
 const double ConfigParam::FLAGS_st_max_s = 40;
@@ -45,6 +47,8 @@ const double ConfigParam::FLAGS_reference_line_sample_step = 0.1;
 const int ConfigParam::FLAGS_num_reference_points_near_destination = 50;
 const double ConfigParam::FLAGS_prediction_total_time = 5.0;
 const double ConfigParam::FLAGS_lateral_ignore_buffer = 3.0;
+const double ConfigParam::FLAGS_static_decision_nudge_l_buffer = 0.5;
+const bool ConfigParam::FLAGS_use_navigation_mode = false;
 }  // namespace forproto
 }  // namespace hqplanner
 

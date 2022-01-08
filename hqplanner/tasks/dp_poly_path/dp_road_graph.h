@@ -5,35 +5,27 @@
 #include <list>
 #include <vector>
 
-#include "hqplanner/for_proto/pnc_point.h"
-// #include "modules/common/proto/pnc_point.pb.h"
-// #include "modules/planning/proto/dp_poly_path_config.pb.h"
 #include "hqplanner/for_proto/dp_poly_path_config.h"
-
-// #include "modules/common/status/status.h"
+#include "hqplanner/for_proto/pnc_point.h"
+#include "hqplanner/math/curve1d/quintic_polynomial_curve1d.h"
 #include "hqplanner/path/path_data.h"
-// #include "modules/planning/common/path/path_data.h"
-// #include "modules/planning/common/path_decision.h"
 #include "hqplanner/path_decision.h"
 #include "hqplanner/path_obstacle.h"
-// #include "modules/planning/common/path_obstacle.h"
 #include "hqplanner/reference_line_info.h"
-// #include "modules/planning/common/reference_line_info.h"
-// #include "modules/planning/common/speed/speed_data.h"
 #include "hqplanner/speed/speed_data.h"
-// #include "modules/planning/common/trajectory/discretized_trajectory.h"
+#include "hqplanner/tasks/dp_poly_path/trajectory_cost.h"
 #include "hqplanner/trajectory/discretized_trajectory.h"
 
-// #include "modules/planning/math/curve1d/quintic_polynomial_curve1d.h"
-#include "hqplanner/math/curve1d/quintic_polynomial_curve1d.h"
-// #include "modules/planning/reference_line/reference_point.h"
-
-// #include "modules/planning/tasks/dp_poly_path/trajectory_cost.h"
-#include "hqplanner/tasks/dp_poly_path/trajectory_cost.h"
-
-namespace apollo {
-namespace planning {
-
+namespace hqplanner {
+namespace tasks {
+using hqplanner::PathObstacle;
+using hqplanner::ReferenceLineInfo;
+using hqplanner::forproto::FrenetFramePoint;
+using hqplanner::forproto::SLPoint;
+using hqplanner::forproto::TrajectoryPoint;
+using hqplanner::path::PathData;
+using hqplanner::speed::SpeedData;
+using hqplanner::tasks::DpPolyPathConfig;
 class DPRoadGraph {
  public:
   explicit DPRoadGraph(const DpPolyPathConfig &config,
@@ -42,13 +34,13 @@ class DPRoadGraph {
 
   ~DPRoadGraph() = default;
 
-  bool FindPathTunnel(const common::TrajectoryPoint &init_point,
+  bool FindPathTunnel(const TrajectoryPoint &init_point,
                       const std::vector<const PathObstacle *> &obstacles,
                       PathData *const path_data);
 
-  void SetDebugLogger(apollo::planning_internal::Debug *debug) {
-    planning_debug_ = debug;
-  }
+  // void SetDebugLogger(apollo::planning_internal::Debug *debug) {
+  //   planning_debug_ = debug;
+  // }
 
  private:
   /**
@@ -58,12 +50,10 @@ class DPRoadGraph {
    public:
     DPRoadGraphNode() = default;
 
-    DPRoadGraphNode(const common::SLPoint point_sl,
-                    const DPRoadGraphNode *node_prev)
+    DPRoadGraphNode(const SLPoint point_sl, const DPRoadGraphNode *node_prev)
         : sl_point(point_sl), min_cost_prev_node(node_prev) {}
 
-    DPRoadGraphNode(const common::SLPoint point_sl,
-                    const DPRoadGraphNode *node_prev,
+    DPRoadGraphNode(const SLPoint point_sl, const DPRoadGraphNode *node_prev,
                     const ComparableCost &cost)
         : sl_point(point_sl), min_cost_prev_node(node_prev), min_cost(cost) {}
 
@@ -77,7 +67,7 @@ class DPRoadGraph {
       }
     }
 
-    common::SLPoint sl_point;
+    SLPoint sl_point;
     const DPRoadGraphNode *min_cost_prev_node = nullptr;
     ComparableCost min_cost = {true, true, true,
                                std::numeric_limits<float>::infinity(),
@@ -88,12 +78,11 @@ class DPRoadGraph {
   bool GenerateMinCostPath(const std::vector<const PathObstacle *> &obstacles,
                            std::vector<DPRoadGraphNode> *min_cost_path);
 
-  bool SamplePathWaypoints(
-      const common::TrajectoryPoint &init_point,
-      std::vector<std::vector<common::SLPoint>> *const points);
+  bool SamplePathWaypoints(const TrajectoryPoint &init_point,
+                           std::vector<std::vector<SLPoint>> *const points);
 
-  bool CalculateFrenetPoint(const common::TrajectoryPoint &traj_point,
-                            common::FrenetFramePoint *const frenet_frame_point);
+  bool CalculateFrenetPoint(const TrajectoryPoint &traj_point,
+                            FrenetFramePoint *const frenet_frame_point);
 
   bool IsValidCurve(const QuinticPolynomialCurve1d &curve) const;
 
@@ -110,18 +99,18 @@ class DPRoadGraph {
 
  private:
   DpPolyPathConfig config_;
-  common::TrajectoryPoint init_point_;
+  TrajectoryPoint init_point_;
   const ReferenceLineInfo &reference_line_info_;
   const ReferenceLine &reference_line_;
   SpeedData speed_data_;
-  common::SLPoint init_sl_point_;
-  common::FrenetFramePoint init_frenet_frame_point_;
-  apollo::planning_internal::Debug *planning_debug_ = nullptr;
+  SLPoint init_sl_point_;
+  FrenetFramePoint init_frenet_frame_point_;
+  // apollo::planning_internal::Debug *planning_debug_ = nullptr;
 
-  ObjectSidePass sidepass_;
+  // ObjectSidePass sidepass_;
 };
 
-}  // namespace planning
-}  // namespace apollo
+}  // namespace tasks
+}  // namespace hqplanner
 
 #endif  // MODULES_PLANNING_TASKS_DP_POLY_PATH_DP_ROAD_GRAPH_H_

@@ -6,7 +6,7 @@
 
 // #include "modules/common/configs/proto/vehicle_config.pb.h"
 #include "hqplanner/for_proto/vehicle_config.h"
-#include "modules/common/macro.h"
+// #include "modules/common/macro.h"
 
 /**
  * @namespace apollo::common
@@ -30,14 +30,14 @@ class VehicleConfigHelper {
    * FLAGS_vehicle_config_path does not exist or it points to a file with
    * invalid format.
    */
-  static void Init();
+  // static void Init();
 
   /**
    * @brief Initialize vehicle configurations with \p config
    * @param config A VehicleConfig class instance. The VehicleConfig class is
    * defined by modules/common/configs/proto/vehicle_config.proto.
    */
-  static void Init(const VehicleConfig &config);
+  // static void Init(const VehicleConfig &config);
 
   /**
    * @brief Initialize vehicle configurations with \p config_file.
@@ -47,7 +47,7 @@ class VehicleConfigHelper {
    * defined by protobuf file
    * modules/common/configs/proto/vehicle_config.proto.
    */
-  static void Init(const std::string &config_file);
+  // static void Init(const std::string &config_file);
 
   /**
    * @brief Get the current vehicle configuration.
@@ -94,7 +94,7 @@ class VehicleConfigHelper {
   static bool is_init_;
 
   // ====================
-  DECLARE_SINGLETON(VehicleConfigHelper);
+  // DECLARE_SINGLETON(VehicleConfigHelper);
 
  public:
   static VehicleConfigHelper *instance() {

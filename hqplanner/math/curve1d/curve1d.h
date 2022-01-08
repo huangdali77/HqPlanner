@@ -19,7 +19,7 @@ class Curve1d {
 
   virtual double ParamLength() const = 0;
 
-  virtual std::string ToString() const = 0;
+  // virtual std::string ToString() const = 0;
 };
 
 }  // namespace math
