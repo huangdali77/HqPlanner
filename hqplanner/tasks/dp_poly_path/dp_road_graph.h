@@ -5,6 +5,7 @@
 #include <list>
 #include <vector>
 
+#include "hqplanner/for_proto/decision.h"
 #include "hqplanner/for_proto/dp_poly_path_config.h"
 #include "hqplanner/for_proto/pnc_point.h"
 #include "hqplanner/math/curve1d/quintic_polynomial_curve1d.h"
@@ -15,12 +16,12 @@
 #include "hqplanner/speed/speed_data.h"
 #include "hqplanner/tasks/dp_poly_path/trajectory_cost.h"
 #include "hqplanner/trajectory/discretized_trajectory.h"
-
 namespace hqplanner {
 namespace tasks {
 using hqplanner::PathObstacle;
 using hqplanner::ReferenceLineInfo;
 using hqplanner::forproto::FrenetFramePoint;
+using hqplanner::forproto::ObjectSidePass;
 using hqplanner::forproto::SLPoint;
 using hqplanner::forproto::TrajectoryPoint;
 using hqplanner::path::PathData;
@@ -107,7 +108,7 @@ class DPRoadGraph {
   FrenetFramePoint init_frenet_frame_point_;
   // apollo::planning_internal::Debug *planning_debug_ = nullptr;
 
-  // ObjectSidePass sidepass_;
+  ObjectSidePass sidepass_;
 };
 
 }  // namespace tasks

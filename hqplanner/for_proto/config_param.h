@@ -27,6 +27,7 @@ struct ConfigParam {
   static const double FLAGS_lateral_ignore_buffer;
   static const double FLAGS_static_decision_nudge_l_buffer;
   static const bool FLAGS_use_navigation_mode;
+  static const double FLAGS_max_stop_speed;
 };
 
 const double ConfigParam::FLAGS_st_max_s = 40;
@@ -34,8 +35,8 @@ const double ConfigParam::FLAGS_trajectory_time_min_interval = 0.02;
 const double ConfigParam::FLAGS_trajectory_time_max_interval = 0.1;
 const double ConfigParam::FLAGS_trajectory_time_high_density_period = 1.0;
 const std::size_t ConfigParam::FLAGS_max_history_frame_num = 2;
-const double ConfigParam::FLAGS_lane_left_width = 2.0;
-const double ConfigParam::FLAGS_lane_right_width = 2.0;
+const double ConfigParam::FLAGS_lane_left_width = 3.0;
+const double ConfigParam::FLAGS_lane_right_width = 3.0;
 const double ConfigParam::FLAGS_virtual_stop_wall_length = 0.1;
 const double ConfigParam::FLAGS_virtual_stop_wall_height = 2.0;
 const double ConfigParam::FLAGS_max_collision_distance = 0.1;
@@ -49,6 +50,7 @@ const double ConfigParam::FLAGS_prediction_total_time = 5.0;
 const double ConfigParam::FLAGS_lateral_ignore_buffer = 3.0;
 const double ConfigParam::FLAGS_static_decision_nudge_l_buffer = 0.5;
 const bool ConfigParam::FLAGS_use_navigation_mode = false;
+const double ConfigParam::FLAGS_max_stop_speed = 0.2;  //被定义为停车的最大速度
 }  // namespace forproto
 }  // namespace hqplanner
 

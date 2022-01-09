@@ -31,7 +31,7 @@ class PathData {
 
   bool SetFrenetPath(const FrenetFramePath &frenet_path);
 
-  void SetReferenceLine(ReferenceLine *reference_line);
+  void SetReferenceLine(const ReferenceLine *reference_line);
 
   const DiscretizedPath &discretized_path() const;
 
@@ -62,7 +62,7 @@ class PathData {
               DiscretizedPath *const discretized_path);
   bool XYToSL(const DiscretizedPath &discretized_path,
               FrenetFramePath *const frenet_path);
-  ReferenceLine *reference_line_ = nullptr;
+  const ReferenceLine *reference_line_ = nullptr;
   DiscretizedPath discretized_path_;
   FrenetFramePath frenet_path_;
   std::list<std::pair<DiscretizedPath, FrenetFramePath>> path_data_history_;
@@ -124,7 +124,7 @@ const FrenetFramePath &PathData::frenet_frame_path() const {
   return frenet_path_;
 }
 
-void PathData::SetReferenceLine(ReferenceLine *reference_line) {
+void PathData::SetReferenceLine(const ReferenceLine *reference_line) {
   Clear();
   reference_line_ = reference_line;
 }

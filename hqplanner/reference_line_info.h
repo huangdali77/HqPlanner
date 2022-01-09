@@ -97,7 +97,7 @@ class ReferenceLineInfo {
    * Check if the current reference line is a change lane reference line, i.e.,
    * ADC's current position is not on this reference line.
    */
-  bool IsChangeLanePath() const;
+  bool IsChangeLanePath() const { return false; };
 
   /**
    * Check if the current reference line is the neighbor of the vehicle
@@ -114,7 +114,7 @@ class ReferenceLineInfo {
 
   // void ExportEngageAdvice(EngageAdvice* engage_advice) const;
 
-  // bool IsSafeToChangeLane() const { return is_safe_to_change_lane_; }
+  bool IsSafeToChangeLane() const { return is_safe_to_change_lane_; }
 
   // const hdmap::RouteSegments& Lanes() const;
   // const std::list<hdmap::Id> TargetLaneId() const;

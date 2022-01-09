@@ -24,7 +24,7 @@
 // #include "modules/planning/common/planning_util.h"
 // #include "modules/planning/math/curve1d/quintic_polynomial_curve1d.h"
 #include "hqplanner/math/curve1d/quintic_polynomial_curve1d.h"
-
+#include "hqplanner/path/frenet_frame_path.h"
 namespace hqplanner {
 namespace tasks {
 
@@ -34,6 +34,7 @@ namespace tasks {
 using hqplanner::forproto::ConfigParam;
 using hqplanner::forproto::VehicleConfigHelper;
 using hqplanner::math::CartesianFrenetConverter;
+using hqplanner::path::FrenetFramePath;
 using hqplanner::util::MakeSLPoint;
 DPRoadGraph::DPRoadGraph(const DpPolyPathConfig &config,
                          const ReferenceLineInfo &reference_line_info,
@@ -68,26 +69,26 @@ bool DPRoadGraph::FindPathTunnel(
     // AERROR << "Fail to generate graph!";
     return false;
   }
-  std::vector<common::FrenetFramePoint> frenet_path;
-  float accumulated_s = init_sl_point_.s();
-  const float path_resolution = config_.path_resolution();
+  std::vector<FrenetFramePoint> frenet_path;
+  float accumulated_s = init_sl_point_.s;
+  const float path_resolution = config_.path_resolution;
 
   for (std::size_t i = 1; i < min_cost_path.size(); ++i) {
     const auto &prev_node = min_cost_path[i - 1];
     const auto &cur_node = min_cost_path[i];
 
-    const float path_length = cur_node.sl_point.s() - prev_node.sl_point.s();
+    const float path_length = cur_node.sl_point.s - prev_node.sl_point.s;
     float current_s = 0.0;
     const auto &curve = cur_node.min_cost_curve;
     while (current_s + path_resolution / 2.0 < path_length) {
       const float l = curve.Evaluate(0, current_s);
       const float dl = curve.Evaluate(1, current_s);
       const float ddl = curve.Evaluate(2, current_s);
-      common::FrenetFramePoint frenet_frame_point;
-      frenet_frame_point.set_s(accumulated_s + current_s);
-      frenet_frame_point.set_l(l);
-      frenet_frame_point.set_dl(dl);
-      frenet_frame_point.set_ddl(ddl);
+      FrenetFramePoint frenet_frame_point;
+      frenet_frame_point.s = accumulated_s + current_s;
+      frenet_frame_point.l = l;
+      frenet_frame_point.dl = dl;
+      frenet_frame_point.ddl = ddl;
       frenet_path.push_back(std::move(frenet_frame_point));
       current_s += path_resolution;
     }
@@ -116,13 +117,12 @@ bool DPRoadGraph::GenerateMinCostPath(
     return false;
   }
   path_waypoints.insert(path_waypoints.begin(),
-                        std::vector<common::SLPoint>{init_sl_point_});
-  const auto &vehicle_config =
-      common::VehicleConfigHelper::instance()->GetConfig();
+                        std::vector<SLPoint>{init_sl_point_});
+  const auto &vehicle_config = VehicleConfigHelper::instance()->GetConfig();
 
   TrajectoryCost trajectory_cost(
       config_, reference_line_, reference_line_info_.IsChangeLanePath(),
-      obstacles, vehicle_config.vehicle_param(), speed_data_, init_sl_point_);
+      obstacles, vehicle_config.vehicle_param, speed_data_, init_sl_point_);
 
   std::list<std::list<DPRoadGraphNode>> graph_nodes;
   graph_nodes.emplace_back();
@@ -141,19 +141,19 @@ bool DPRoadGraph::GenerateMinCostPath(
 
       graph_nodes.back().emplace_back(cur_point, nullptr);
       auto &cur_node = graph_nodes.back().back();
-      if (FLAGS_enable_multi_thread_in_dp_poly_path) {
-        PlanningThreadPool::instance()->Push(std::bind(
-            &DPRoadGraph::UpdateNode, this, std::ref(prev_dp_nodes), level,
-            total_level, &trajectory_cost, &(front), &(cur_node)));
+      // if (FLAGS_enable_multi_thread_in_dp_poly_path) {
+      //   PlanningThreadPool::instance()->Push(std::bind(
+      //       &DPRoadGraph::UpdateNode, this, std::ref(prev_dp_nodes), level,
+      //       total_level, &trajectory_cost, &(front), &(cur_node)));
 
-      } else {
-        UpdateNode(prev_dp_nodes, level, total_level, &trajectory_cost, &front,
-                   &cur_node);
-      }
+      // } else {
+      UpdateNode(prev_dp_nodes, level, total_level, &trajectory_cost, &front,
+                 &cur_node);
+      // }
     }
-    if (FLAGS_enable_multi_thread_in_dp_poly_path) {
-      PlanningThreadPool::instance()->Synchronize();
-    }
+    // if (FLAGS_enable_multi_thread_in_dp_poly_path) {
+    //   PlanningThreadPool::instance()->Synchronize();
+    // }
   }
 
   // find best path
@@ -174,13 +174,13 @@ bool DPRoadGraph::GenerateMinCostPath(
 
   std::reverse(min_cost_path->begin(), min_cost_path->end());
 
-  for (const auto &node : *min_cost_path) {
-    ADEBUG << "min_cost_path: " << node.sl_point.ShortDebugString();
-    planning_debug_->mutable_planning_data()
-        ->mutable_dp_poly_graph()
-        ->add_min_cost_point()
-        ->CopyFrom(node.sl_point);
-  }
+  // for (const auto &node : *min_cost_path) {
+  //   ADEBUG << "min_cost_path: " << node.sl_point.ShortDebugString();
+  //   planning_debug_->mutable_planning_data()
+  //       ->mutable_dp_poly_graph()
+  //       ->add_min_cost_point()
+  //       ->CopyFrom(node.sl_point);
+  // }
   return true;
 }
 
@@ -189,28 +189,29 @@ void DPRoadGraph::UpdateNode(const std::list<DPRoadGraphNode> &prev_nodes,
                              TrajectoryCost *trajectory_cost,
                              DPRoadGraphNode *front,
                              DPRoadGraphNode *cur_node) {
-  DCHECK_NOTNULL(trajectory_cost);
-  DCHECK_NOTNULL(front);
-  DCHECK_NOTNULL(cur_node);
+  assert(trajectory_cost != nullptr);
+  assert(front != nullptr);
+  assert(cur_node != nullptr);
+
   for (const auto &prev_dp_node : prev_nodes) {
     const auto &prev_sl_point = prev_dp_node.sl_point;
     const auto &cur_point = cur_node->sl_point;
     float init_dl = 0.0;
     float init_ddl = 0.0;
     if (level == 1) {
-      init_dl = init_frenet_frame_point_.dl();
-      init_ddl = init_frenet_frame_point_.ddl();
+      init_dl = init_frenet_frame_point_.dl;
+      init_ddl = init_frenet_frame_point_.ddl;
     }
-    QuinticPolynomialCurve1d curve(prev_sl_point.l(), init_dl, init_ddl,
-                                   cur_point.l(), 0.0, 0.0,
-                                   cur_point.s() - prev_sl_point.s());
+    QuinticPolynomialCurve1d curve(prev_sl_point.l, init_dl, init_ddl,
+                                   cur_point.l, 0.0, 0.0,
+                                   cur_point.s - prev_sl_point.s);
 
     if (!IsValidCurve(curve)) {
       continue;
     }
     const auto cost =
-        trajectory_cost->Calculate(curve, prev_sl_point.s(), cur_point.s(),
-                                   level, total_level) +
+        trajectory_cost->Calculate(curve, prev_sl_point.s, cur_point.s, level,
+                                   total_level) +
         prev_dp_node.min_cost;
 
     cur_node->UpdateCost(&prev_dp_node, curve, cost);
@@ -218,16 +219,16 @@ void DPRoadGraph::UpdateNode(const std::list<DPRoadGraphNode> &prev_nodes,
 
   // try to connect the current point with the first point directly
   if (level >= 2) {
-    const float init_dl = init_frenet_frame_point_.dl();
-    const float init_ddl = init_frenet_frame_point_.ddl();
-    QuinticPolynomialCurve1d curve(init_sl_point_.l(), init_dl, init_ddl,
-                                   cur_node->sl_point.l(), 0.0, 0.0,
-                                   cur_node->sl_point.s() - init_sl_point_.s());
+    const float init_dl = init_frenet_frame_point_.dl;
+    const float init_ddl = init_frenet_frame_point_.ddl;
+    QuinticPolynomialCurve1d curve(init_sl_point_.l, init_dl, init_ddl,
+                                   cur_node->sl_point.l, 0.0, 0.0,
+                                   cur_node->sl_point.s - init_sl_point_.s);
     if (!IsValidCurve(curve)) {
       return;
     }
     const auto cost = trajectory_cost->Calculate(
-        curve, init_sl_point_.s(), cur_node->sl_point.s(), level, total_level);
+        curve, init_sl_point_.s, cur_node->sl_point.s, level, total_level);
     cur_node->UpdateCost(front, curve, cost);
   }
 }
@@ -243,6 +244,7 @@ bool DPRoadGraph::SamplePathWaypoints(
       reference_line_.Length());
   const auto &vehicle_config = VehicleConfigHelper::instance()->GetConfig();
   const float half_adc_width = vehicle_config.vehicle_param.width / 2.0;
+  // num_sample_per_level = 7
   const size_t num_sample_per_level =
       ConfigParam::FLAGS_use_navigation_mode
           ? config_.navigator_sample_num_each_level
@@ -251,44 +253,45 @@ bool DPRoadGraph::SamplePathWaypoints(
   const bool has_sidepass = HasSidepass();
 
   constexpr float kSamplePointLookForwardTime = 4.0;
+  // step_length=[8m,...speed x 4s...,15m]
   const float step_length =
-      common::math::Clamp(init_point.v() * kSamplePointLookForwardTime,
-                          config_.step_length_min(), config_.step_length_max());
+      hqplanner::math::Clamp(init_point.v * kSamplePointLookForwardTime,
+                             config_.step_length_min, config_.step_length_max);
   const float level_distance =
-      (init_point.v() > FLAGS_max_stop_speed) ? step_length : step_length / 2.0;
-  float accumulated_s = init_sl_point_.s();
+      (init_point.v > ConfigParam::FLAGS_max_stop_speed) ? step_length
+                                                         : step_length / 2.0;
+  float accumulated_s = init_sl_point_.s;
   float prev_s = accumulated_s;
 
-  auto *status = util::GetPlanningStatus();
-  if (status == nullptr) {
-    AERROR << "Fail to  get planning status.";
-    return false;
-  }
-  if (status->planning_state().has_pull_over() &&
-      status->planning_state().pull_over().in_pull_over()) {
-    status->mutable_planning_state()->mutable_pull_over()->set_status(
-        PullOverStatus::IN_OPERATION);
-    const auto &start_point =
-        status->planning_state().pull_over().start_point();
-    SLPoint start_point_sl;
-    if (!reference_line_.XYToSL(start_point, &start_point_sl)) {
-      AERROR << "Fail to change xy to sl.";
-      return false;
-    }
-
-    if (init_sl_point_.s() > start_point_sl.s()) {
-      const auto &stop_point =
-          status->planning_state().pull_over().stop_point();
-      SLPoint stop_point_sl;
-      if (!reference_line_.XYToSL(stop_point, &stop_point_sl)) {
-        AERROR << "Fail to change xy to sl.";
-        return false;
-      }
-      std::vector<common::SLPoint> level_points(1, stop_point_sl);
-      points->emplace_back(level_points);
-      return true;
-    }
-  }
+  // auto *status = util::GetPlanningStatus();
+  //   if (status == nullptr) {
+  //     AERROR << "Fail to  get planning status.";
+  //     return false;
+  //   }
+  //   if (status->planning_state().has_pull_over() &&
+  //       status->planning_state().pull_over().in_pull_over()) {
+  //     status->mutable_planning_state()->mutable_pull_over()->set_status(
+  //         PullOverStatus::IN_OPERATION);
+  //     const auto &start_point =
+  //         status->planning_state().pull_over().start_point();
+  //     SLPoint start_point_sl;
+  //     if (!reference_line_.XYToSL(start_point, &start_point_sl)) {
+  //       AERROR << "Fail to change xy to sl.";
+  //       return false;
+  //     }
+  //     if (init_sl_point_.s() > start_point_sl.s()) {
+  //       const auto &stop_point =
+  //           status->planning_state().pull_over().stop_point();
+  //       SLPoint stop_point_sl;
+  //       if (!reference_line_.XYToSL(stop_point, &stop_point_sl)) {
+  //         AERROR << "Fail to change xy to sl.";
+  //         return false;
+  //       }
+  //       std::vector<common::SLPoint> level_points(1, stop_point_sl);
+  //       points->emplace_back(level_points);
+  //       return true;
+  //     }
+  //   }
 
   for (std::size_t i = 0; accumulated_s < total_length; ++i) {
     accumulated_s += level_distance;
@@ -310,28 +313,30 @@ bool DPRoadGraph::SamplePathWaypoints(
     const float eff_right_width = right_width - half_adc_width - kBoundaryBuff;
     const float eff_left_width = left_width - half_adc_width - kBoundaryBuff;
 
-    float kDefaultUnitL = 1.2 / (num_sample_per_level - 1);
+    float kDefaultUnitL = 1.2 / (num_sample_per_level - 1);  // 1.2/6=0.2m
     if (reference_line_info_.IsChangeLanePath() &&
         !reference_line_info_.IsSafeToChangeLane()) {
       kDefaultUnitL = 1.0;
     }
-    const float sample_l_range = kDefaultUnitL * (num_sample_per_level - 1);
+    const float sample_l_range =
+        kDefaultUnitL *
+        (num_sample_per_level - 1);  // 1.2m或6m(换道时的横向采样范围大)
     float sample_right_boundary = -eff_right_width;
     float sample_left_boundary = eff_left_width;
 
     const float kLargeDeviationL = 1.75;
     if (reference_line_info_.IsChangeLanePath() ||
-        std::fabs(init_sl_point_.l()) > kLargeDeviationL) {
-      sample_right_boundary = std::fmin(-eff_right_width, init_sl_point_.l());
-      sample_left_boundary = std::fmax(eff_left_width, init_sl_point_.l());
+        std::fabs(init_sl_point_.l) > kLargeDeviationL) {
+      sample_right_boundary = std::fmin(-eff_right_width, init_sl_point_.l);
+      sample_left_boundary = std::fmax(eff_left_width, init_sl_point_.l);
 
-      if (init_sl_point_.l() > eff_left_width) {
-        sample_right_boundary = std::fmax(sample_right_boundary,
-                                          init_sl_point_.l() - sample_l_range);
+      if (init_sl_point_.l > eff_left_width) {
+        sample_right_boundary =
+            std::fmax(sample_right_boundary, init_sl_point_.l - sample_l_range);
       }
-      if (init_sl_point_.l() < eff_right_width) {
-        sample_left_boundary = std::fmin(sample_left_boundary,
-                                         init_sl_point_.l() + sample_l_range);
+      if (init_sl_point_.l < eff_right_width) {
+        sample_left_boundary =
+            std::fmin(sample_left_boundary, init_sl_point_.l + sample_l_range);
       }
     }
 
@@ -342,40 +347,41 @@ bool DPRoadGraph::SamplePathWaypoints(
     } else if (has_sidepass) {
       // currently only left nudge is supported. Need road hard boundary for
       // both sides
-      switch (sidepass_.type()) {
+      switch (sidepass_.type) {
         case ObjectSidePass::LEFT: {
-          sample_l.push_back(eff_left_width + config_.sidepass_distance());
+          sample_l.push_back(eff_left_width + config_.sidepass_distance);
           break;
         }
         case ObjectSidePass::RIGHT: {
-          sample_l.push_back(-eff_right_width - config_.sidepass_distance());
+          sample_l.push_back(-eff_right_width - config_.sidepass_distance);
           break;
         }
         default:
           break;
       }
     } else {
-      common::util::uniform_slice(sample_right_boundary, sample_left_boundary,
-                                  num_sample_per_level - 1, &sample_l);
+      hqplanner::util::uniform_slice(sample_right_boundary,
+                                     sample_left_boundary,
+                                     num_sample_per_level - 1, &sample_l);
     }
-    std::vector<common::SLPoint> level_points;
-    planning_internal::SampleLayerDebug sample_layer_debug;
+    std::vector<SLPoint> level_points;
+    // planning_internal::SampleLayerDebug sample_layer_debug;
     for (size_t j = 0; j < sample_l.size(); ++j) {
-      common::SLPoint sl = common::util::MakeSLPoint(s, sample_l[j]);
-      sample_layer_debug.add_sl_point()->CopyFrom(sl);
+      SLPoint sl = hqplanner::util::MakeSLPoint(s, sample_l[j]);
+      // sample_layer_debug.add_sl_point()->CopyFrom(sl);
       level_points.push_back(std::move(sl));
     }
     if (!reference_line_info_.IsChangeLanePath() && has_sidepass) {
-      auto sl_zero = common::util::MakeSLPoint(s, 0.0);
-      sample_layer_debug.add_sl_point()->CopyFrom(sl_zero);
+      auto sl_zero = hqplanner::util::MakeSLPoint(s, 0.0);
+      // sample_layer_debug.add_sl_point()->CopyFrom(sl_zero);
       level_points.push_back(std::move(sl_zero));
     }
 
     if (!level_points.empty()) {
-      planning_debug_->mutable_planning_data()
-          ->mutable_dp_poly_graph()
-          ->add_sample_layer()
-          ->CopyFrom(sample_layer_debug);
+      // planning_debug_->mutable_planning_data()
+      //     ->mutable_dp_poly_graph()
+      //     ->add_sample_layer()
+      //     ->CopyFrom(sample_layer_debug);
       points->emplace_back(level_points);
     }
   }
@@ -438,12 +444,12 @@ void DPRoadGraph::GetCurveCost(TrajectoryCost trajectory_cost,
 
 bool DPRoadGraph::HasSidepass() {
   const auto &path_decision = reference_line_info_.path_decision();
-  for (const auto &obstacle : path_decision.path_obstacles().Items()) {
-    if (obstacle->LateralDecision().has_sidepass()) {
-      sidepass_ = obstacle->LateralDecision().sidepass();
-      return true;
-    }
-  }
+  // for (const auto &obstacle : path_decision.path_obstacles().Items()) {
+  //   if (obstacle->LateralDecision().has_sidepass()) {
+  //     sidepass_ = obstacle->LateralDecision().sidepass();
+  //     return true;
+  //   }
+  // }
   return false;
 }
 
