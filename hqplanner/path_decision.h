@@ -27,7 +27,10 @@ class PathDecision {
 
   const std::unordered_map<std::string, PathObstacle> &path_obstacles() const;
 
-  PathObstacle Find(const std::string &object_id);
+  // PathObstacle Find(const std::string &object_id);
+  const PathObstacle *Find(const std::string &object_id) const;
+
+  PathObstacle *Find(const std::string &object_id);
 
  private:
   std::unordered_map<std::string, PathObstacle> path_obstacles_;
@@ -52,12 +55,20 @@ const std::unordered_map<std::string, PathObstacle>
   return path_obstacles_;
 }
 
-PathObstacle PathDecision::Find(const std::string &object_id) {
+PathObstacle *PathDecision::Find(const std::string &object_id) {
+  // return path_obstacles_.Find(object_id);
   if (path_obstacles_.find(object_id) == path_obstacles_.end()) {
-    return PathObstacle();
+    return nullptr;
   }
-  return path_obstacles_[object_id];
+  return &path_obstacles_[object_id];
 }
+
+// PathObstacle PathDecision::Find(const std::string &object_id) {
+//   if (path_obstacles_.find(object_id) == path_obstacles_.end()) {
+//     return PathObstacle();
+//   }
+//   return path_obstacles_[object_id];
+// }
 
 }  // namespace hqplanner
 

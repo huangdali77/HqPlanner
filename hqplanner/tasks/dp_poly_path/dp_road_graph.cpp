@@ -4,33 +4,15 @@
 
 #include <algorithm>
 #include <utility>
-// #include "modules/common/proto/error_code.pb.h"
-// #include "modules/common/proto/pnc_point.pb.h"
-// #include "modules/planning/proto/planning_internal.pb.h"
-// #include "modules/planning/proto/planning_status.pb.h"
 
-// #include "modules/common/configs/vehicle_config_helper.h"
 #include "hqplanner/for_proto/vehicle_config_helper.h"
-// #include "modules/common/log.h"
-// #include "modules/common/math/cartesian_frenet_conversion.h"
 #include "hqplanner/math/cartesian_frenet_conversion.h"
-// #include "modules/common/util/util.h"
-#include "hqplanner/util/util.h"
-// #include "modules/map/hdmap/hdmap_util.h"
-// #include "modules/planning/common/path/frenet_frame_path.h"
-#include "hqplanner/path/frenet_frame_path.h"
-// #include "modules/planning/common/planning_gflags.h"
-// #include "modules/planning/common/planning_thread_pool.h"
-// #include "modules/planning/common/planning_util.h"
-// #include "modules/planning/math/curve1d/quintic_polynomial_curve1d.h"
 #include "hqplanner/math/curve1d/quintic_polynomial_curve1d.h"
 #include "hqplanner/path/frenet_frame_path.h"
+#include "hqplanner/util/util.h"
 namespace hqplanner {
 namespace tasks {
 
-// using apollo::common::ErrorCode;
-// using apollo::common::Status;
-// using apollo::common::SLPoint;
 using hqplanner::forproto::ConfigParam;
 using hqplanner::forproto::VehicleConfigHelper;
 using hqplanner::math::CartesianFrenetConverter;
@@ -69,6 +51,7 @@ bool DPRoadGraph::FindPathTunnel(
     // AERROR << "Fail to generate graph!";
     return false;
   }
+  // 将dp得到的多段路径按特定步长采点FrenetFramePoint存放到frenet_path
   std::vector<FrenetFramePoint> frenet_path;
   float accumulated_s = init_sl_point_.s;
   const float path_resolution = config_.path_resolution;

@@ -1,4 +1,3 @@
-// #include "modules/planning/tasks/dp_poly_path/dp_poly_path_optimizer.h"
 #include "hqplanner/tasks/dp_poly_path/dp_poly_path_optimizer.h"
 
 #include <string>
@@ -9,13 +8,11 @@
 #include <assert.h>
 
 #include "hqplanner/for_proto/planning_config.h"
-#include "modules/planning/common/planning_gflags.h"
-#include "modules/planning/tasks/dp_poly_path/dp_road_graph.h"
+// #include "modules/planning/common/planning_gflags.h"
+#include "hqplanner/tasks/dp_poly_path/dp_road_graph.h"
+// #include "modules/planning/tasks/dp_poly_path/dp_road_graph.h"
 namespace hqplanner {
 namespace tasks {
-
-// using apollo::common::ErrorCode;
-// using apollo::common::Status;
 
 DpPolyPathOptimizer::DpPolyPathOptimizer()
     : PathOptimizer("DpPolyPathOptimizer") {}
@@ -27,7 +24,7 @@ bool DpPolyPathOptimizer::Init(const PlanningConfig &config) {
 }
 
 bool DpPolyPathOptimizer::Process(const SpeedData &speed_data,
-                                  const ReferenceLine &,
+                                  const ReferenceLine &reference_line,
                                   const TrajectoryPoint &init_point,
                                   PathData *const path_data) {
   if (!is_init_) {
@@ -36,17 +33,18 @@ bool DpPolyPathOptimizer::Process(const SpeedData &speed_data,
   assert(path_data != nullptr);
   //   CHECK_NOTNULL(path_data);
   DPRoadGraph dp_road_graph(config_, *reference_line_info_, speed_data);
-  dp_road_graph.SetDebugLogger(reference_line_info_->mutable_debug());
+  // dp_road_graph.SetDebugLogger(reference_line_info_->mutable_debug());
 
-  if (!dp_road_graph.FindPathTunnel(
-          init_point,
-          reference_line_info_->path_decision()->path_obstacles().Items(),
-          path_data)) {
-    AERROR << "Failed to find tunnel in road graph";
-    return Status(ErrorCode::PLANNING_ERROR, "dp_road_graph path generation");
+  std::vector<const PathObstacle *> path_obstacles;
+  for (auto &path_obstacle :
+       reference_line_info_->path_decision()->path_obstacles()) {
+    path_obstacles.push_back(&(path_obstacle.second));
+  }
+  if (!dp_road_graph.FindPathTunnel(init_point, path_obstacles, path_data)) {
+    return false;
   }
 
-  return Status::OK();
+  return true;
 }
 
 }  // namespace tasks

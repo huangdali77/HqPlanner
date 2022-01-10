@@ -68,8 +68,8 @@ class Frame {
 
   const ReferenceLineInfo *DriveReferenceLineInfo() const;
 
-  const std::vector<const Obstacle *> obstacles() const;
-
+  const std::vector<const Obstacle *> obstacle_items() const;
+  const std::unordered_map<std::string, Obstacle> obstacles() const;
   const Obstacle *CreateStopObstacle(
       ReferenceLineInfo *const reference_line_info,
       const std::string &obstacle_id, const double obstacle_s);
@@ -130,6 +130,7 @@ class Frame {
   const ReferenceLineInfo *drive_reference_line_info_ = nullptr;
   PredictionObstacles prediction_;
   std::unordered_map<std::string, Obstacle> obstacles_;
+  std::vector<const Obstacle *> obstacle_items_;
   ADCTrajectory trajectory_;  // last published trajectory
 
   ReferenceLineProvider *reference_line_provider_ = nullptr;
@@ -360,7 +361,7 @@ bool Frame::CreateReferenceLineInfo() {
 
   bool has_valid_reference_line = false;
   for (auto &ref_info : reference_line_info_) {
-    if (!ref_info.Init(obstacles())) {
+    if (!ref_info.Init(obstacle_items())) {
       // AERROR << "Failed to init reference line";
       continue;
     } else {
@@ -372,6 +373,24 @@ bool Frame::CreateReferenceLineInfo() {
 
 void Frame::AddObstacle(const Obstacle &obstacle) {
   obstacles_.insert({obstacle.Id(), obstacle});
+  obstacle_items_.push_back(&(obstacles_[obstacle.Id()]));
+}
+// const std::unordered_map<std::string, Obstacle> obstacles() const;
+const std::unordered_map<std::string, Obstacle> Frame::obstacles() const {
+  return obstacles_;
+}
+
+const std::vector<const Obstacle *> Frame::obstacle_items() const {
+  return obstacle_items_;
+}
+
+Obstacle *Frame::Find(const std::string &id) {
+  if (obstacles_.find(id) == obstacles_.end()) {
+    return nullptr;
+  }
+  std::unordered_map<std::string, Obstacle> obstacles_;
+
+  return &obstacles_[id];
 }
 
 // ===================FrameHistory======================================

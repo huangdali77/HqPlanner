@@ -10,7 +10,7 @@
 namespace hqplanner {
 namespace tasks {
 using hqplanner::forproto::DpPolyPathConfig;
-
+using hqplanner::forproto::PlanningConfig;
 /**
  * @class DpPolyPathOptimizer
  * @brief DpPolyPathOptimizer does path planning with dynamic programming
