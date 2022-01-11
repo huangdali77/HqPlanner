@@ -373,6 +373,7 @@ bool ReferenceLineInfo::CombinePathAndSpeedProfile(
   }
   return true;
 }
+bool ReferenceLineInfo::IsDrivable() const { return is_drivable_; }
 }  // namespace hqplanner
 
 #endif

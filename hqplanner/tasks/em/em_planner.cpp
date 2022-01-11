@@ -37,10 +37,10 @@
 
 namespace hqplanner {
 namespace tasks {
-
 using hqplanner::forproto ::SLPoint;
 using hqplanner::forproto::SpeedPoint;
 using hqplanner::forproto::TrajectoryPoint;
+using hqplanner::tasks::DpPolyPathOptimizer;
 // using common::adapter::AdapterManager;
 using hqplanner::math::Vec2d;
 // using common::time::Clock;
@@ -134,12 +134,18 @@ constexpr double kStraightForwardLineCost = 10.0;
 //   ptr_stats->set_time_ms(time_diff_ms);
 // }
 
+EMPlanner::EMPlanner() {
+  std::unique_ptr<DpPolyPathOptimizer> dp_poly_path_optimizer_ptr(
+      new DpPolyPathOptimizer);
+  tasks_.emplace_back(dp_poly_path_optimizer_ptr);
+}
+
 bool EMPlanner::Plan(const TrajectoryPoint& planning_start_point,
                      Frame* frame) {
   bool has_drivable_reference_line = false;
   bool disable_low_priority_path = false;
-  auto status =
-      Status(ErrorCode::PLANNING_ERROR, "reference line not drivable");
+  // auto status =
+  //     Status(ErrorCode::PLANNING_ERROR, "reference line not drivable");
   for (auto& reference_line_info : frame->reference_line_info()) {
     if (disable_low_priority_path) {
       reference_line_info.SetDrivable(false);
@@ -149,27 +155,28 @@ bool EMPlanner::Plan(const TrajectoryPoint& planning_start_point,
     }
     auto cur_status =
         PlanOnReferenceLine(planning_start_point, frame, &reference_line_info);
-    if (cur_status.ok() && reference_line_info.IsDrivable()) {
+    if (cur_status && reference_line_info.IsDrivable()) {
       has_drivable_reference_line = true;
-      if (FLAGS_prioritize_change_lane &&
-          reference_line_info.IsChangeLanePath() &&
-          reference_line_info.Cost() < kStraightForwardLineCost) {
-        disable_low_priority_path = true;
-      }
+      disable_low_priority_path = true;
+      // if (FLAGS_prioritize_change_lane &&
+      //     reference_line_info.IsChangeLanePath() &&
+      //     reference_line_info.Cost() < kStraightForwardLineCost) {
+      //   disable_low_priority_path = true;
+      // }
     } else {
       reference_line_info.SetDrivable(false);
     }
   }
-  return has_drivable_reference_line ? Status::OK() : status;
+  return has_drivable_reference_line;
 }
 
-Status EMPlanner::PlanOnReferenceLine(
-    const TrajectoryPoint& planning_start_point, Frame* frame,
-    ReferenceLineInfo* reference_line_info) {
+bool EMPlanner::PlanOnReferenceLine(const TrajectoryPoint& planning_start_point,
+                                    Frame* frame,
+                                    ReferenceLineInfo* reference_line_info) {
   if (!reference_line_info->IsChangeLanePath()) {
     reference_line_info->AddCost(kStraightForwardLineCost);
   }
-  ADEBUG << "planning start point:" << planning_start_point.DebugString();
+  // ADEBUG << "planning start point:" << planning_start_point.DebugString();
   auto* heuristic_speed_data = reference_line_info->mutable_speed_data();
   auto speed_profile =
       GenerateInitSpeedProfile(planning_start_point, reference_line_info);

@@ -246,16 +246,18 @@ bool Frame::Init() {
   // vehicle_state_ = VehicleStateProvider::vehicle_state_;
 
   // prediction
+  // 添加障碍物信息
   if (!prediction_.prediction_obstacle.empty()) {
     for (auto &ptr : Obstacle::CreateObstacles(prediction_)) {
       AddObstacle(*ptr);
     }
   }
-
+  // 碰撞检查
   const auto *collision_obstacle = FindCollisionObstacle();
   if (collision_obstacle) {
     return false;
   }
+  // 生成ReferenceLineInfo
   if (!CreateReferenceLineInfo()) {
     return false;
   }
@@ -436,6 +438,19 @@ class FrameHistory {
     }
     map_.clear();
   }
+
+ public:
+  static FrameHistory *instance() {
+    static FrameHistory instance;
+    return &instance;
+  }
+
+ private:
+  // FrameHistory();
+
+ private:
+  FrameHistory(const FrameHistory &);
+  FrameHistory &operator=(const FrameHistory &);
 
  public:
   std::size_t capacity_ = ConfigParam::FLAGS_max_history_frame_num;

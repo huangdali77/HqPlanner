@@ -30,7 +30,7 @@ class EMPlanner : public Planner {
   /**
    * @brief Constructor
    */
-  EMPlanner() = default;
+  EMPlanner();
 
   /**
    * @brief Destructor
