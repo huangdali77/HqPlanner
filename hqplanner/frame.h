@@ -16,6 +16,8 @@
 #include "for_proto/prediction_obstacle.h"
 #include "for_proto/vehicle_config.h"
 #include "for_proto/vehicle_state.h"
+#include "hqplanner/for_proto/vehicle_config_helper.h"
+#include "hqplanner/math/math_utils.h"
 #include "math/box2d.h"
 #include "math/indexed_queue.h"
 #include "math/line_segment2d.h"
@@ -35,6 +37,7 @@ using hqplanner::forproto::PerceptionObstacles;
 using hqplanner::forproto::PredictionObstacles;
 using hqplanner::forproto::SLPoint;
 using hqplanner::forproto::TrajectoryPoint;
+using hqplanner::forproto::VehicleConfigHelper;
 using hqplanner::forproto::VehicleParam;
 using hqplanner::forproto::VehicleState;
 using hqplanner::math::Box2d;
@@ -269,9 +272,9 @@ const Obstacle *Frame::FindCollisionObstacle() const {
   if (obstacles_.empty()) {
     return nullptr;
   }
-  const VehicleParam param;
-  // const auto &param =
-  //     common::VehicleConfigHelper::instance()->GetConfig().vehicle_param();
+  // const VehicleParam param;
+  const auto &param =
+      VehicleConfigHelper::instance()->GetConfig().vehicle_param;
   Vec2d position(vehicle_state_.x, vehicle_state_.y);
   Vec2d vec_to_center(
       (param.front_edge_to_center - param.back_edge_to_center) / 2.0,
@@ -439,18 +442,8 @@ class FrameHistory {
     map_.clear();
   }
 
- public:
-  static FrameHistory *instance() {
-    static FrameHistory instance;
-    return &instance;
-  }
-
  private:
-  // FrameHistory();
-
- private:
-  FrameHistory(const FrameHistory &);
-  FrameHistory &operator=(const FrameHistory &);
+  DECLARE_SINGLETON(FrameHistory);
 
  public:
   std::size_t capacity_ = ConfigParam::FLAGS_max_history_frame_num;

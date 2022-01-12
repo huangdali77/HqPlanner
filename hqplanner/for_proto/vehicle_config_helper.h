@@ -6,7 +6,7 @@
 
 // #include "modules/common/configs/proto/vehicle_config.pb.h"
 #include "hqplanner/for_proto/vehicle_config.h"
-// #include "modules/common/macro.h"
+#include "hqplanner/util/macro.h"
 
 /**
  * @namespace apollo::common
@@ -24,35 +24,10 @@ namespace forproto {
  */
 class VehicleConfigHelper {
  public:
-  /**
-   * @brief Initialize vehicle configurations with default configuration file
-   * pointed by gflags FLAGS_vehicle_config_path. The code will crash if
-   * FLAGS_vehicle_config_path does not exist or it points to a file with
-   * invalid format.
-   */
-  // static void Init();
+  static void Init();
 
-  /**
-   * @brief Initialize vehicle configurations with \p config
-   * @param config A VehicleConfig class instance. The VehicleConfig class is
-   * defined by modules/common/configs/proto/vehicle_config.proto.
-   */
-  // static void Init(const VehicleConfig &config);
+  static void Init(const VehicleConfig &config);
 
-  /**
-   * @brief Initialize vehicle configurations with \p config_file.
-   * The code will crash if \p config_file does not exist or \p config_file has
-   * invalid format.
-   * @param config_file The configuration file path. The format of the file is
-   * defined by protobuf file
-   * modules/common/configs/proto/vehicle_config.proto.
-   */
-  // static void Init(const std::string &config_file);
-
-  /**
-   * @brief Get the current vehicle configuration.
-   * @return the current VehicleConfig instance reference.
-   */
   static const VehicleConfig &GetConfig();
 
   /**
@@ -93,23 +68,7 @@ class VehicleConfigHelper {
   static VehicleConfig vehicle_config_;
   static bool is_init_;
 
-  // ====================
-  // DECLARE_SINGLETON(VehicleConfigHelper);
-
- public:
-  static VehicleConfigHelper *instance() {
-    static VehicleConfigHelper instance;
-    return &instance;
-  }
-
- private:
-  VehicleConfigHelper();
-
- private:
-  VehicleConfigHelper(const VehicleConfigHelper &);
-  VehicleConfigHelper &operator=(const VehicleConfigHelper &);
-
- private:
+  DECLARE_SINGLETON(VehicleConfigHelper);
 };
 
 }  // namespace forproto

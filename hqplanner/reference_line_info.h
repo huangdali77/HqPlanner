@@ -14,6 +14,7 @@
 #include "for_proto/sl_boundary.h"
 #include "for_proto/vehicle_config.h"
 #include "for_proto/vehicle_state.h"
+#include "hqplanner/for_proto/vehicle_config_helper.h"
 #include "path/path_data.h"
 #include "path_decision.h"
 #include "reference_line.h"
@@ -26,6 +27,7 @@ using hqplanner::forproto::SLBoundary;
 using hqplanner::forproto::SpeedPoint;
 using hqplanner::forproto::TrajectoryPoint;
 using hqplanner::forproto::VehicleConfig;
+using hqplanner::forproto::VehicleConfigHelper;
 using hqplanner::forproto::VehicleParam;
 using hqplanner::forproto::VehicleState;
 using hqplanner::path::PathData;
@@ -182,8 +184,7 @@ ReferenceLineInfo::ReferenceLineInfo(const VehicleState& vehicle_state,
       reference_line_(reference_line) {}
 
 bool ReferenceLineInfo::Init(const std::vector<const Obstacle*>& obstacles) {
-  const VehicleParam param;
-  // const auto& param = VehicleConfigHelper::GetConfig().vehicle_param();
+  const auto& param = VehicleConfigHelper::GetConfig().vehicle_param;
   const auto& path_point = adc_planning_point_.path_point;
   Vec2d position(path_point.x, path_point.y);
   Vec2d vec_to_center(

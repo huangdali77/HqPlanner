@@ -15,24 +15,12 @@ bool VehicleConfigHelper::is_init_ = true;
 
 VehicleConfigHelper::VehicleConfigHelper() {}
 
-// void VehicleConfigHelper::Init() { Init(FLAGS_vehicle_config_path); }
-
-// void VehicleConfigHelper::Init(const std::string &config_file) {
-//   VehicleConfig params;
-//   CHECK(apollo::common::util::GetProtoFromFile(config_file, &params))
-//       << "Unable to parse vehicle config file " << config_file;
-//   Init(params);
-// }
-
-// void VehicleConfigHelper::Init(const VehicleConfig &vehicle_params) {
-//   vehicle_config_ = vehicle_params;
-//   is_init_ = true;
-// }
+void VehicleConfigHelper::Init(const VehicleConfig &vehicle_params) {
+  vehicle_config_ = vehicle_params;
+  is_init_ = true;
+}
 
 const VehicleConfig &VehicleConfigHelper::GetConfig() {
-  //   if (!is_init_) {
-  //     Init();
-  //   }
   return vehicle_config_;
 }
 

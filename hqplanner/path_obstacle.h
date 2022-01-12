@@ -26,10 +26,12 @@
 // #include "modules/planning/proto/sl_boundary.pb.h"
 // #include "modules/planning/reference_line/reference_line.h"
 // #include "modules/prediction/proto/prediction_obstacle.pb.h"
+#include "hqplanner/for_proto/vehicle_config_helper.h"
 double FLAGS_st_max_t = 8.0;
 namespace hqplanner {
 using hqplanner::forproto::ConfigParam;
 using hqplanner::forproto::PerceptionObstacle;
+using hqplanner::forproto::VehicleConfigHelper;
 using hqplanner::forproto::VehicleParam;
 using hqplanner::math::Box2d;
 using hqplanner::math::Vec2d;
@@ -144,9 +146,11 @@ void PathObstacle::SetPerceptionSlBoundary(const SLBoundary& sl_boundary) {
 void PathObstacle::BuildReferenceLineStBoundary(ReferenceLine& reference_line,
                                                 const double adc_start_s) {
   // const VehicleParam adc_param;
-
-  const double adc_width = adc_param_.width;
-  if (obstacle_->IsStatic() || obstacle_->Trajectory().empty()) {
+  const auto& adc_param =
+      VehicleConfigHelper::instance()->GetConfig().vehicle_param;
+  const double adc_width = adc_param.width;
+  if (obstacle_->IsStatic() ||
+      obstacle_->Trajectory().trajectory_point.empty()) {
     std::vector<std::pair<STPoint, STPoint>> point_pairs;
     double start_s = perception_sl_boundary_.start_s;
     double end_s = perception_sl_boundary_.end_s;
@@ -178,16 +182,18 @@ bool PathObstacle::BuildTrajectoryStBoundary(ReferenceLine& reference_line,
   }
   const double object_width = perception.width;
   const double object_length = perception.length;
-  const auto& trajectory_points = obstacle_->Trajectory();
+  const auto& trajectory_points = obstacle_->Trajectory().trajectory_point;
   if (trajectory_points.empty()) {
     // AWARN << "object " << object_id << " has no trajectory points";
     return false;
   }
-  // const auto& adc_param =
-  //     VehicleConfigHelper::instance()->GetConfig().vehicle_param();
-  const double adc_length = adc_param_.length;
+
+  const auto& adc_param =
+      VehicleConfigHelper::instance()->GetConfig().vehicle_param;
+  const double adc_length = adc_param.length;
   const double adc_half_length = adc_length / 2.0;
-  const double adc_width = adc_param_.width;
+  const double adc_width = adc_param.width;
+
   // Box2d min_box({0, 0}, 1.0, 1.0, 1.0);
   // Box2d max_box({0, 0}, 1.0, 1.0, 1.0);
   std::vector<std::pair<STPoint, STPoint>> polygon_points;
