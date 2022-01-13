@@ -21,6 +21,50 @@ struct ObjectNudge {
 };
 
 struct ObjectIgnore {};
+
+struct ObjectStop {
+  StopReasonCode reason_code;
+  double distance_s;  // in meters
+  // When stopped, the front center of vehicle should be at this point.
+  PointENU stop_point;
+  // When stopped, the heading of the vehicle should be stop_heading.
+  double stop_heading;
+  std::vector<std::string> wait_for_obstacle;
+};
+
+struct ObjectNudge {
+  enum Type {
+    LEFT_NUDGE = 1,   // drive from the left side of the obstacle
+    RIGHT_NUDGE = 2,  // drive from the right side of the obstacle
+    NO_NUDGE = 3      // No nudge is set.
+  };
+  Type type;
+  // minimum lateral distance in meters. positive if type = LEFT_NUDGE
+  // negative if type = RIGHT_NUDGE
+  double distance_l;
+};
+struct ObjectYield {
+  double distance_s;  // minimum longitudinal distance in meters
+  PointENU fence_point;
+  double fence_heading;
+  double time_buffer;  // minimum time buffer required after the obstacle
+                       // reaches the intersect point.
+};
+
+struct ObjectFollow {
+  double distance_s;  // minimum longitudinal distance in meters
+  PointENU fence_point;
+  double fence_heading;
+};
+
+struct ObjectOvertake {
+  double distance_s;  // minimum longitudinal distance in meters
+  PointENU fence_point;
+  double fence_heading;
+  double time_buffer;  // minimum time buffer required before the obstacle
+                       // reaches the intersect point.
+};
+
 struct ObjectDecisionType {
   enum ObjectTag {
     IGNORE = 1,
@@ -34,17 +78,31 @@ struct ObjectDecisionType {
     OBJECT_TAG_NOT_SET = 9
   };
 
-  bool has_ignore() { return object_tag == IGNORE; }
-  bool has_sidepass() { return object_tag == SIDEPASS; }
-  bool has_nudge() { return object_tag == NUDGE; }
+  bool has_sidepass() const { return object_tag == SIDEPASS; }
+  bool has_nudge() const { return object_tag == NUDGE; }
+  // 纵向决策
+  bool has_ignore() const { return object_tag == IGNORE; }
+  bool has_stop() const { return object_tag == STOP; }
+  bool has_yield() const { return object_tag == YIELD; }
+  bool has_follow() const { return object_tag == FOLLOW; }
+  bool has_overtake() const { return object_tag == OVERTAKE; }
 
   ObjectTag object_tag = OBJECT_TAG_NOT_SET;
   ObjectIgnore ignore_;
   ObjectNudge nudge_;
   ObjectSidePass sidepass_;
-  ObjectIgnore ignore() { return ignore_; }
-  ObjectNudge nudge() { return nudge_; }
-  ObjectSidePass sidepass() { return sidepass_; }
+  ObjectStop stop_;
+  ObjectYield yield_;
+  ObjectOvertake overtake_;
+  ObjectFollow follow_;
+
+  ObjectIgnore ignore() const { return ignore_; }
+  ObjectNudge nudge() const { return nudge_; }
+  ObjectSidePass sidepass() const { return sidepass_; }
+  ObjectFollow follow() const { return follow_; }
+  ObjectStop stop() const { return stop_; }
+  ObjectYield yield() const { return yield_; }
+  ObjectOvertake overtake() const { return overtake_; }
 };
 
 enum StopReasonCode {
@@ -72,16 +130,6 @@ struct MainStop {
   double stop_heading;
   // optional apollo.routing.ChangeLaneType change_lane_type = 5;
 };
-
-struct ObjectStop {
-  StopReasonCode reason_code;
-  double distance_s;  // in meters
-  // When stopped, the front center of vehicle should be at this point.
-  PointENU stop_point;
-  // When stopped, the heading of the vehicle should be stop_heading.
-  double stop_heading;
-  std::vector<std::string> wait_for_obstacle;
-}
 
 }  // namespace forproto
 }  // namespace hqplanner

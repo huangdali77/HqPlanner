@@ -8,6 +8,7 @@ namespace forproto {
 struct ConfigParam {
   /* data */
   static const double FLAGS_st_max_s;
+  static const double FLAGS_st_max_t;
   static const double FLAGS_trajectory_time_min_interval;  // second
   static const double FLAGS_trajectory_time_max_interval;
   static const double FLAGS_trajectory_time_high_density_period;
@@ -30,7 +31,8 @@ struct ConfigParam {
   static const double FLAGS_max_stop_speed;
 };
 
-const double ConfigParam::FLAGS_st_max_s = 40;
+const double ConfigParam::FLAGS_st_max_s = 40.0;
+const double ConfigParam::FLAGS_st_max_t = 8.0;
 const double ConfigParam::FLAGS_trajectory_time_min_interval = 0.02;
 const double ConfigParam::FLAGS_trajectory_time_max_interval = 0.1;
 const double ConfigParam::FLAGS_trajectory_time_high_density_period = 1.0;
