@@ -9,15 +9,23 @@
 #include <vector>
 
 #include "hqplanner/for_proto/decision.h"
-#include "obstacle.h"
-// #include "path_obstacle.h"
+#include "hqplanner/for_proto/geometry.h"
+#include "hqplanner/for_proto/pnc_point.h"
 #include "hqplanner/path_obstacle.h"
+#include "hqplanner/reference_line.h"
+#include "hqplanner/speed/st_boundary.h"
+#include "obstacle.h"
+#include "path_obstacle.h"
 
 namespace hqplanner {
-using hqplanner::PathObstacle;
+// using hqplanner::PathObstacle;
+using hqplanner::ReferenceLine;
 using hqplanner::forproto::MainStop;
 using hqplanner::forproto::ObjectDecisionType;
 using hqplanner::forproto::ObjectStop;
+using hqplanner::forproto::PointENU;
+using hqplanner::forproto::SLPoint;
+using hqplanner::speed::StBoundary;
 /**
  * @class PathDecision
  *
@@ -33,14 +41,16 @@ class PathDecision {
   const std::unordered_map<std::string, PathObstacle> &path_obstacles() const;
 
   // PathObstacle Find(const std::string &object_id);
-  bool AddLateralDecision(const std::string &tag, const std::string &object_id,
-                          const ObjectDecisionType &decision);
-  bool AddLongitudinalDecision(const std::string &tag,
-                               const std::string &object_id,
-                               const ObjectDecisionType &decision);
-  void SetStBoundary(const std::string &id, const StBoundary &boundary);
+  bool AddLateralDecision(
+      const std::string &tag, const std::string &object_id,
+      const hqplanner::forproto::ObjectDecisionType &decision);
+  bool AddLongitudinalDecision(
+      const std::string &tag, const std::string &object_id,
+      const hqplanner::forproto::ObjectDecisionType &decision);
+  void SetStBoundary(const std::string &id,
+                     const hqplanner::speed::StBoundary &boundary);
   void EraseStBoundaries();
-  MainStop main_stop() const { return main_stop_; }
+  hqplanner::forproto::MainStop main_stop() const { return main_stop_; }
   const PathObstacle *Find(const std::string &object_id) const;
 
   PathObstacle *Find(const std::string &object_id);
@@ -49,11 +59,15 @@ class PathDecision {
   bool MergeWithMainStop(const ObjectStop &obj_stop, const std::string &obj_id,
                          const ReferenceLine &ref_line,
                          const SLBoundary &adc_sl_boundary);
+  const std::vector<const PathObstacle *> path_obstacle_items() const {
+    return path_obstacle_items_;
+  }
 
  private:
   std::unordered_map<std::string, PathObstacle> path_obstacles_;
+  std::vector<const PathObstacle *> path_obstacle_items_;
   double stop_reference_line_s_ = std::numeric_limits<double>::max();
-  MainStop main_stop_;
+  hqplanner::forproto::MainStop main_stop_;
 };
 
 // ====================函数实现=============================

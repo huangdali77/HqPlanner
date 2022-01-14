@@ -14,14 +14,6 @@
  */
 namespace hqplanner {
 namespace forproto {
-
-/**
- * @class VehicleConfigHelper
- *
- * @Brief This is a helper class that can load vehicle configurations. The
- * vehicle configurations are
- * defined modules/common/configs/proto/vehicle_config.proto
- */
 class VehicleConfigHelper {
  public:
   static void Init();

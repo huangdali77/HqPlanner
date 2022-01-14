@@ -29,6 +29,10 @@ struct ConfigParam {
   static const double FLAGS_static_decision_nudge_l_buffer;
   static const bool FLAGS_use_navigation_mode;
   static const double FLAGS_max_stop_speed;
+  static const double FLAGS_max_stop_distance_obstacle;
+  static const double FLAGS_min_stop_distance_obstacle;
+  static const bool FLAGS_enable_nudge_decision;
+  static const double FLAGS_nudge_distance_obstacle;
 };
 
 const double ConfigParam::FLAGS_st_max_s = 40.0;
@@ -53,6 +57,10 @@ const double ConfigParam::FLAGS_lateral_ignore_buffer = 3.0;
 const double ConfigParam::FLAGS_static_decision_nudge_l_buffer = 0.5;
 const bool ConfigParam::FLAGS_use_navigation_mode = false;
 const double ConfigParam::FLAGS_max_stop_speed = 0.2;  //被定义为停车的最大速度
+const double ConfigParam::FLAGS_max_stop_distance_obstacle = 10.0;
+const double ConfigParam::FLAGS_min_stop_distance_obstacle = 6.0;
+const bool ConfigParam::FLAGS_enable_nudge_decision = true;
+const double ConfigParam::FLAGS_nudge_distance_obstacle = 0.5;
 }  // namespace forproto
 }  // namespace hqplanner
 

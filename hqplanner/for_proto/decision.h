@@ -17,18 +17,18 @@ struct ObjectNudge {
   Type type = NO_NUDGE;
   // minimum lateral distance in meters. positive if type = LEFT_NUDGE
   // negative if type = RIGHT_NUDGE
-  double distance_l = 2;
+  double distance_l = 0.0;
 };
 
 struct ObjectIgnore {};
 
 struct ObjectStop {
   StopReasonCode reason_code;
-  double distance_s;  // in meters
+  double distance_s = 0.0;  // in meters
   // When stopped, the front center of vehicle should be at this point.
   PointENU stop_point;
   // When stopped, the heading of the vehicle should be stop_heading.
-  double stop_heading;
+  double stop_heading = 0.0;
   std::vector<std::string> wait_for_obstacle;
 };
 
@@ -41,28 +41,28 @@ struct ObjectNudge {
   Type type;
   // minimum lateral distance in meters. positive if type = LEFT_NUDGE
   // negative if type = RIGHT_NUDGE
-  double distance_l;
+  double distance_l = 0.0;
 };
 struct ObjectYield {
-  double distance_s;  // minimum longitudinal distance in meters
+  double distance_s = 0.0;  // minimum longitudinal distance in meters
   PointENU fence_point;
-  double fence_heading;
-  double time_buffer;  // minimum time buffer required after the obstacle
-                       // reaches the intersect point.
+  double fence_heading = 0.0;
+  double time_buffer = 0.0;  // minimum time buffer required after the obstacle
+                             // reaches the intersect point.
 };
 
 struct ObjectFollow {
-  double distance_s;  // minimum longitudinal distance in meters
+  double distance_s = 0.0;  // minimum longitudinal distance in meters
   PointENU fence_point;
-  double fence_heading;
+  double fence_heading = 0.0;
 };
 
 struct ObjectOvertake {
-  double distance_s;  // minimum longitudinal distance in meters
+  double distance_s = 0.0;  // minimum longitudinal distance in meters
   PointENU fence_point;
-  double fence_heading;
-  double time_buffer;  // minimum time buffer required before the obstacle
-                       // reaches the intersect point.
+  double fence_heading = 0.0;
+  double time_buffer = 0.0;  // minimum time buffer required before the obstacle
+                             // reaches the intersect point.
 };
 
 struct ObjectDecisionType {
@@ -123,11 +123,11 @@ enum StopReasonCode {
 };
 struct MainStop {
   StopReasonCode reason_code;
-  std::string reason;
+  std::string reason = "";
   // When stopped, the front center of vehicle should be at this point.
   PointENU stop_point;
   // When stopped, the heading of the vehicle should be stop_heading.
-  double stop_heading;
+  double stop_heading = 0.0;
   // optional apollo.routing.ChangeLaneType change_lane_type = 5;
 };
 

@@ -24,6 +24,7 @@ const VehicleConfig &VehicleConfigHelper::GetConfig() {
   return vehicle_config_;
 }
 
+//转向时前轴外侧车轮的安全转向半径
 double VehicleConfigHelper::MinSafeTurnRadius() {
   const auto &param = vehicle_config_.vehicle_param;
   double lat_edge_to_center =

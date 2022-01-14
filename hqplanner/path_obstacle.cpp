@@ -1,6 +1,15 @@
 #include "hqplanner/path_obstacle.h"
 
 namespace hqplanner {
+// using hqplanner::forproto::ConfigParam;
+// using hqplanner::forproto::ObjectDecisionType;
+// using hqplanner::forproto::PerceptionObstacle;
+using hqplanner::forproto::VehicleConfigHelper;
+using hqplanner::forproto::VehicleParam;
+// using hqplanner::math::Box2d;
+// using hqplanner::math::Vec2d;
+// using hqplanner::speed::StBoundary;
+// using hqplanner::speed::STPoint;
 namespace {
 const double kStBoundaryDeltaS = 0.2;        // meters
 const double kStBoundarySparseDeltaS = 1.0;  // meters
@@ -382,6 +391,32 @@ bool PathObstacle::IsLateralIgnore() const {
 bool PathObstacle::IsLateralDecision(const ObjectDecisionType& decision) {
   return decision.has_ignore() || decision.has_nudge() ||
          decision.has_sidepass();
+}
+
+double PathObstacle::MinRadiusStopDistance(
+    const VehicleParam& vehicle_param) const {
+  if (min_radius_stop_distance_ > 0) {
+    return min_radius_stop_distance_;
+  }
+  constexpr double stop_distance_buffer = 0.5;
+  const double min_turn_radius = VehicleConfigHelper::MinSafeTurnRadius();
+  double lateral_diff = vehicle_param.width / 2.0 +
+                        std::max(std::fabs(perception_sl_boundary_.start_l),
+                                 std::fabs(perception_sl_boundary_.end_l));
+  const double kEpison = 1e-5;
+  lateral_diff = std::min(lateral_diff, min_turn_radius - kEpison);
+  double stop_distance =
+      std::sqrt(std::fabs(min_turn_radius * min_turn_radius -
+                          (min_turn_radius - lateral_diff) *
+                              (min_turn_radius - lateral_diff))) +
+      stop_distance_buffer;
+  stop_distance -= vehicle_param.front_edge_to_center;
+  // 将stop_distance控制在6m到10m之间
+  stop_distance =
+      std::min(stop_distance, ConfigParam::FLAGS_max_stop_distance_obstacle);
+  stop_distance =
+      std::max(stop_distance, ConfigParam::FLAGS_min_stop_distance_obstacle);
+  return stop_distance;
 }
 
 }  // namespace hqplanner

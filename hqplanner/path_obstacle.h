@@ -19,12 +19,12 @@
 #include "reference_line.h"
 // double FLAGS_st_max_t = 8.0;
 namespace hqplanner {
-// using hqplanner::speed::StBoundary;
+
 using hqplanner::forproto::ConfigParam;
 using hqplanner::forproto::ObjectDecisionType;
 using hqplanner::forproto::PerceptionObstacle;
-using hqplanner::forproto::VehicleConfigHelper;
-using hqplanner::forproto::VehicleParam;
+// using hqplanner::forproto::VehicleConfigHelper;
+// using hqplanner::forproto::VehicleParam;
 using hqplanner::math::Box2d;
 using hqplanner::math::Vec2d;
 using hqplanner::speed::StBoundary;
@@ -42,13 +42,13 @@ class PathObstacle {
    * return the merged lateral decision
    * Lateral decision is one of {Nudge, Ignore}
    **/
-  const ObjectDecisionType& LateralDecision() const;
+  const hqplanner::forproto::ObjectDecisionType& LateralDecision() const;
 
   /**
    * @brief return the merged longitudinal decision
    * Longitudinal decision is one of {Stop, Yield, Follow, Overtake, Ignore}
    **/
-  const ObjectDecisionType& LongitudinalDecision() const;
+  const hqplanner::forproto::ObjectDecisionType& LongitudinalDecision() const;
 
   const SLBoundary& PerceptionSLBoundary() const;
 
@@ -58,13 +58,15 @@ class PathObstacle {
 
   const std::vector<std::string>& decider_tags() const;
 
-  const std::vector<ObjectDecisionType>& decisions() const;
+  const std::vector<hqplanner::forproto::ObjectDecisionType>& decisions() const;
 
-  void AddLongitudinalDecision(const std::string& decider_tag,
-                               const ObjectDecisionType& decision);
+  void AddLongitudinalDecision(
+      const std::string& decider_tag,
+      const hqplanner::forproto::ObjectDecisionType& decision);
 
-  void AddLateralDecision(const std::string& decider_tag,
-                          const ObjectDecisionType& decision);
+  void AddLateralDecision(
+      const std::string& decider_tag,
+      const hqplanner::forproto::ObjectDecisionType& decision);
 
   bool HasLateralDecision() const;
 
@@ -102,36 +104,42 @@ class PathObstacle {
   /**
    * @brief check if a ObjectDecisionType is a longitudinal decision.
    **/
-  static bool IsLongitudinalDecision(const ObjectDecisionType& decision);
+  static bool IsLongitudinalDecision(
+      const hqplanner::forproto::ObjectDecisionType& decision);
 
   /**
    * @brief check if a ObjectDecisionType is a lateral decision.
    **/
-  static bool IsLateralDecision(const ObjectDecisionType& decision);
+  static bool IsLateralDecision(
+      const hqplanner::forproto::ObjectDecisionType& decision);
 
   void SetBlockingObstacle(bool blocking) { is_blocking_obstacle_ = blocking; }
   bool IsBlockingObstacle() const { return is_blocking_obstacle_; }
+  double MinRadiusStopDistance(
+      const forproto::VehicleParam& vehicle_param) const;
 
  private:
-  static ObjectDecisionType MergeLongitudinalDecision(
-      const ObjectDecisionType& lhs, const ObjectDecisionType& rhs);
-  static ObjectDecisionType MergeLateralDecision(const ObjectDecisionType& lhs,
-                                                 const ObjectDecisionType& rhs);
+  static hqplanner::forproto::ObjectDecisionType MergeLongitudinalDecision(
+      const hqplanner::forproto::ObjectDecisionType& lhs,
+      const hqplanner::forproto::ObjectDecisionType& rhs);
+  static hqplanner::forproto::ObjectDecisionType MergeLateralDecision(
+      const hqplanner::forproto::ObjectDecisionType& lhs,
+      const hqplanner::forproto::ObjectDecisionType& rhs);
   bool BuildTrajectoryStBoundary(ReferenceLine& reference_line,
                                  const double adc_start_s,
                                  StBoundary* const st_boundary);
   bool IsValidObstacle(const PerceptionObstacle& perception_obstacle);
   std::string id_;
   const Obstacle* obstacle_ = nullptr;
-  std::vector<ObjectDecisionType> decisions_;
+  std::vector<hqplanner::forproto::ObjectDecisionType> decisions_;
   std::vector<std::string> decider_tags_;
 
   SLBoundary perception_sl_boundary_;
   StBoundary reference_line_st_boundary_;
   StBoundary st_boundary_;
 
-  ObjectDecisionType lateral_decision_;
-  ObjectDecisionType longitudinal_decision_;
+  hqplanner::forproto::ObjectDecisionType lateral_decision_;
+  hqplanner::forproto::ObjectDecisionType longitudinal_decision_;
   // VehicleParam adc_param_;
   bool is_blocking_obstacle_ = false;
   double min_radius_stop_distance_ = -1.0;
