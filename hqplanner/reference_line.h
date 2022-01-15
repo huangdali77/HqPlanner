@@ -66,6 +66,7 @@ class ReferenceLine {
   bool GetLaneWidth(const double s, double* const lane_left_width,
                     double* const lane_right_width) const;
   bool Shrink(const Vec2d& point, double look_backward, double look_forward);
+  double GetSpeedLimitFromS(const double s) const;
 
  private:
   std::vector<AnchorPoint> anchor_points_;
@@ -81,6 +82,16 @@ class ReferenceLine {
   // point有更新时route_points_才需要更新,也就是调用ConstructReferenceLineByFixedStep()函数
   std::vector<ReferencePoint> route_points_;
   std::vector<double> accumulated_s_;  // step = 0.1m
+
+  struct SpeedLimit {
+    double start_s = 0.0;
+    double end_s = 0.0;
+    double speed_limit = 0.0;  // unit m/s
+    SpeedLimit() = default;
+    SpeedLimit(double _start_s, double _end_s, double _speed_limit)
+        : start_s(_start_s), end_s(_end_s), speed_limit(_speed_limit) {}
+  };
+  std::vector<SpeedLimit> speed_limit_;
 };
 
 // =========================函数实现==================================================================
@@ -431,6 +442,25 @@ bool ReferenceLine::Shrink(const Vec2d& point, double look_backward,
   // map_path_ = MapPath(std::move(std::vector<hdmap::MapPathPoint>(
   //     reference_points_.begin(), reference_points_.end())));
   return true;
+}
+
+double ReferenceLine::GetSpeedLimitFromS(const double s) const {
+  for (const auto& speed_limit : speed_limit_) {
+    if (s >= speed_limit.start_s && s <= speed_limit.end_s) {
+      return speed_limit.speed_limit;
+    }
+  }
+  const auto& map_path_point = GetReferencePoint(s);
+  double speed_limit = ConfigParam::FLAGS_planning_upper_speed_limit;
+  // for (const auto& lane_waypoint : map_path_point.lane_waypoints()) {
+  //   if (lane_waypoint.lane == nullptr) {
+  //     AWARN << "lane_waypoint.lane is nullptr";
+  //     continue;
+  //   }
+  //   speed_limit =
+  //       std::fmin(lane_waypoint.lane->lane().speed_limit(), speed_limit);
+  // }
+  return speed_limit;
 }
 
 // =======================备用方案=============================================

@@ -20,10 +20,10 @@ namespace forproto {
 /////////////////////////////////////////////////////////////////
 
 struct SLBoundary {
-  double start_s = 0;
-  double end_s = 0;
-  double start_l = 0;
-  double end_l = 0;
+  double start_s = 0.0;
+  double end_s = 0.0;
+  double start_l = 0.0;
+  double end_l = 0.0;
 };
 }  // namespace forproto
 }  // namespace hqplanner

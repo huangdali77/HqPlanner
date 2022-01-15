@@ -23,8 +23,8 @@
 #include "st_point.h"
 namespace hqplanner {
 namespace speed {
-using hqplanner::math::LineSegment2d;
-using hqplanner::math::Vec2d;
+// using hqplanner::math::LineSegment2d;
+// using hqplanner::math::Vec2d;
 
 class StBoundary : public hqplanner::math::Polygon2d {
  public:
@@ -506,4 +506,4 @@ class StBoundary : public hqplanner::math::Polygon2d {
 }  // namespace speed
 }  // namespace hqplanner
 
-#endif  // MODULES_PLANNING_TASKS_ST_GRAPH_ST_GRAPH_BOUNDARY_H_
+#endif

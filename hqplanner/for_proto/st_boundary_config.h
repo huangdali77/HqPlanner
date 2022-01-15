@@ -12,7 +12,7 @@ struct StBoundaryConfig {
   double minimal_kappa = 0.00001;
   double point_extension = 1.0;
   double lowest_speed = 2.5;
-  int num_points_to_avg_kappa = 4;
+  int num_points_to_avg_kappa = 2;
 
   double static_obs_nudge_speed_ratio = 0.6;
   double dynamic_obs_nudge_speed_ratio = 0.8;

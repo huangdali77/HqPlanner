@@ -1,6 +1,8 @@
 #include "hqplanner/speed/st_boundary.h"
 namespace hqplanner {
 namespace speed {
+using hqplanner::math::LineSegment2d;
+using hqplanner::math::Vec2d;
 StBoundary::StBoundary(
     const std::vector<std::pair<STPoint, STPoint>>& point_pairs) {
   assert(IsValid(point_pairs));

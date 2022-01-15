@@ -2,8 +2,8 @@
 #define MODULES_PLANNING_TASKS_ST_GRAPH_SPEED_LIMIT_DECIDER_H_
 
 #include <string>
+#include <unordered_map>
 #include <vector>
-
 // #include "modules/common/configs/proto/vehicle_config.pb.h"
 #include "hqplanner/for_proto/vehicle_config.h"
 // #include "modules/planning/proto/st_boundary_config.pb.h"
@@ -22,8 +22,8 @@
 #include "hqplanner/for_proto/sl_boundary.h"
 #include "hqplanner/reference_line.h"
 
-namespace apollo {
-namespace planning {
+namespace hqplanner {
+namespace tasks {
 using hqplanner::ReferenceLine;
 using hqplanner::forproto::SLBoundary;
 using hqplanner::forproto::StBoundaryConfig;
@@ -39,7 +39,8 @@ class SpeedLimitDecider {
   virtual ~SpeedLimitDecider() = default;
 
   virtual bool GetSpeedLimits(
-      const IndexedList<std::string, PathObstacle>& path_obstacles,
+      const std::unordered_map<std::string, hqplanner::PathObstacle>&
+          path_obstacles,
       SpeedLimit* const speed_limit_data) const;
 
  private:
@@ -58,7 +59,7 @@ class SpeedLimitDecider {
   const hqplanner::forproto::VehicleParam& vehicle_param_;
 };
 
-}  // namespace planning
-}  // namespace apollo
+}  // namespace tasks
+}  // namespace hqplanner
 
 #endif  // MODULES_PLANNING_TASKS_ST_GRAPH_SPEED_LIMIT_DECIDER_H_

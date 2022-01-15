@@ -18,7 +18,7 @@
 #include "path_obstacle.h"
 
 namespace hqplanner {
-// using hqplanner::PathObstacle;
+using hqplanner::PathObstacle;
 using hqplanner::ReferenceLine;
 using hqplanner::forproto::MainStop;
 using hqplanner::forproto::ObjectDecisionType;

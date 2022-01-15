@@ -17,14 +17,14 @@
 #include "math/vec2d.h"
 #include "obstacle.h"
 #include "reference_line.h"
-// double FLAGS_st_max_t = 8.0;
+
 namespace hqplanner {
 
 using hqplanner::forproto::ConfigParam;
 using hqplanner::forproto::ObjectDecisionType;
 using hqplanner::forproto::PerceptionObstacle;
-// using hqplanner::forproto::VehicleConfigHelper;
-// using hqplanner::forproto::VehicleParam;
+using hqplanner::forproto::VehicleConfigHelper;
+using hqplanner::forproto::VehicleParam;
 using hqplanner::math::Box2d;
 using hqplanner::math::Vec2d;
 using hqplanner::speed::StBoundary;
@@ -116,7 +116,7 @@ class PathObstacle {
   void SetBlockingObstacle(bool blocking) { is_blocking_obstacle_ = blocking; }
   bool IsBlockingObstacle() const { return is_blocking_obstacle_; }
   double MinRadiusStopDistance(
-      const forproto::VehicleParam& vehicle_param) const;
+      const hqplanner::forproto::VehicleParam& vehicle_param) const;
 
  private:
   static hqplanner::forproto::ObjectDecisionType MergeLongitudinalDecision(
