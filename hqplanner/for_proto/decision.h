@@ -131,5 +131,14 @@ struct MainStop {
   // optional apollo.routing.ChangeLaneType change_lane_type = 5;
 };
 
+struct ObjectDecision {
+  std::string id = "";
+  std::int32_t perception_id = 0;
+  ObjectDecisionType object_decision;
+};
+struct ObjectDecisions {
+  std::vector<ObjectDecision> decision;
+};
+
 }  // namespace forproto
 }  // namespace hqplanner

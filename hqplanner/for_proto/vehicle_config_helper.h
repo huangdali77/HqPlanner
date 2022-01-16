@@ -1,24 +1,19 @@
 #ifndef HQPLANNER_FORPROTO_VEHICLE_CONFIG_HELPER_H_
-
 #define HQPLANNER_FORPROTO_VEHICLE_CONFIG_HELPER_H_
 
-#include <string>
-
-// #include "modules/common/configs/proto/vehicle_config.pb.h"
 #include <algorithm>
 #include <cmath>
+#include <string>
 
 #include "hqplanner/for_proto/vehicle_config.h"
 #include "hqplanner/util/macro.h"
 
-/**
- * @namespace apollo::common
- * @brief apollo::common
- */
 namespace hqplanner {
 namespace forproto {
+
 class VehicleConfigHelper {
  public:
+  // VehicleConfigHelper() {}
   static void Init();
 
   static void Init(const VehicleConfig &config);
@@ -96,4 +91,4 @@ double VehicleConfigHelper::MinSafeTurnRadius() {
 }  // namespace forproto
 }  // namespace hqplanner
 
-#endif  // MODULES_CONFIGS_VEHICLE_CONFIG_H_
+#endif  // HQPLANNER_FORPROTO_VEHICLE_CONFIG_HELPER_H_

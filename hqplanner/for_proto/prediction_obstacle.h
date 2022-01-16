@@ -7,7 +7,7 @@
 namespace hqplanner {
 namespace forproto {
 struct Trajectory {
-  double probability;  // probability of this trajectory
+  double probability = 0.0;  // probability of this trajectory
   std::vector<TrajectoryPoint> trajectory_point;
 };
 

@@ -10,8 +10,8 @@
 
 // #include "modules/planning/tasks/speed_optimizer.h"
 #include "hqplanner/tasks/speed_optimizer.h"
-#include "modules/planning/tasks/st_graph/speed_limit_decider.h"
-#include "hqplanner/tasks/
+// #include "modules/planning/tasks/st_graph/speed_limit_decider.h"
+#include "hqplanner/tasks/dp_st_speed/dp_st_speed_optimizer.h"
 #include "modules/planning/tasks/st_graph/st_boundary_mapper.h"
 
 namespace apollo {
