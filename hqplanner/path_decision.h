@@ -38,7 +38,8 @@ class PathDecision {
   // void AddPathObstacle(PathObstacle path_obstacle);
   PathObstacle *AddPathObstacle(const PathObstacle &path_obstacle);
 
-  const std::unordered_map<std::string, PathObstacle> &path_obstacles() const;
+  const std::unordered_map<std::string, hqplanner::PathObstacle>
+      &path_obstacles() const;
 
   // PathObstacle Find(const std::string &object_id);
   bool AddLateralDecision(

@@ -35,6 +35,7 @@ struct ConfigParam {
   static const double FLAGS_nudge_distance_obstacle;
   static const double FLAGS_planning_upper_speed_limit;
   static const bool FLAGS_enable_nudge_slowdown;
+  static const bool FLAGS_enable_side_vehicle_st_boundary;
 };
 
 const double ConfigParam::FLAGS_st_max_s = 40.0;
@@ -65,6 +66,7 @@ const bool ConfigParam::FLAGS_enable_nudge_decision = true;
 const double ConfigParam::FLAGS_nudge_distance_obstacle = 0.5;
 const double ConfigParam::FLAGS_planning_upper_speed_limit = 31.3;
 const bool ConfigParam::FLAGS_enable_nudge_slowdown = true;
+const bool ConfigParam::FLAGS_enable_side_vehicle_st_boundary = false;
 }  // namespace forproto
 }  // namespace hqplanner
 

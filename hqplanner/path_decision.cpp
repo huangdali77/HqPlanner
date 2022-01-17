@@ -39,7 +39,7 @@ PathObstacle *PathDecision::Find(const std::string &object_id) {
   return &path_obstacles_[object_id];
 }
 
-const std::unordered_map<std::string, PathObstacle>
+const std::unordered_map<std::string, hqplanner::PathObstacle>
     &PathDecision::path_obstacles() const {
   return path_obstacles_;
 }

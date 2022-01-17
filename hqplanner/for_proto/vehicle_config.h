@@ -16,7 +16,7 @@ struct VehicleParam {
 
   double min_turn_radius = 5.05386147161;
   double max_acceleration = 2.0;
-  double max_deceleration = -6.0;
+  double max_deceleration = -4.0;
 
   // The following items are used to compute trajectory constraints in
   // planning/control/canbus, vehicle max steer angle
