@@ -4,17 +4,17 @@ namespace hqplanner {
 namespace forproto {
 struct DpPolyPathConfig {
   int sample_points_num_each_level = 7;
-  double step_length_max = 15.0;
-  double step_length_min = 8.0;
+  double step_length_max = 40.0;
+  double step_length_min = 20.0;
   double lateral_sample_offset = 0.5;
   double lateral_adjust_coeff = 0.5;
   // Trajectory Cost Config
   double eval_time_interval = 0.1;
-  double path_resolution = 0.1;
+  double path_resolution = 1.0;
   double obstacle_ignore_distance = 20.0;
   double obstacle_collision_distance = 0.2;
   double obstacle_risk_distance = 2.0;
-  double obstacle_collision_cost = 1e3;
+  double obstacle_collision_cost = 1e8;
   double path_l_cost = 6.5;
   double path_dl_cost = 8e3;
   double path_ddl_cost = 5e1;

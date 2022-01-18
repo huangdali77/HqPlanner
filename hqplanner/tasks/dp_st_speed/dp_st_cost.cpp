@@ -113,7 +113,7 @@ float DpStCost::GetObstacleCost(const StGraphPoint& st_graph_point) {
     }
     double s_upper = 0.0;
     double s_lower = 0.0;
-
+    // boundary_cost_表示第i个障碍物在第j列（t时刻）处的上下boundary
     int boundary_index = boundary_map_[boundary.id()];
     if (boundary_cost_[boundary_index][st_graph_point.index_t()].first < 0.0) {
       boundary.GetBoundarySRange(t, &s_upper, &s_lower);

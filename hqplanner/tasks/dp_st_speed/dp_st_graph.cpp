@@ -161,6 +161,7 @@ bool DpStGraph::CalculateTotalCost() {
     int highest_row = 0;
     int lowest_row = cost_table_.back().size() - 1;
 
+    // 计算当前列可用范围内的cost
     for (uint32_t r = next_lowest_row; r <= next_highest_row; ++r) {
       //   if (FLAGS_enable_multi_thread_in_dp_st_graph) {
       //     PlanningThreadPool::instance()->Push(
@@ -243,6 +244,7 @@ void DpStGraph::CalculateCostAt(const uint32_t c, const uint32_t r) {
     const float acc = (r * unit_s_ / unit_t_ - init_point_.v) / unit_t_;
     if (acc < dp_st_speed_config_.max_deceleration ||
         acc > dp_st_speed_config_.max_acceleration) {
+      // totalcost默认的是infinite
       return;
     }
 
@@ -266,6 +268,7 @@ void DpStGraph::CalculateCostAt(const uint32_t c, const uint32_t r) {
 
   if (c == 2) {
     for (uint32_t r_pre = r_low; r_pre <= r; ++r_pre) {
+      // acc=(r * unit_s_ -  r_pre * unit_s_)/unit_t_- (r_pre * unit_s_)/unit_t_
       const float acc =
           (r * unit_s_ - 2 * r_pre * unit_s_) / (unit_t_ * unit_t_);
       if (acc < dp_st_speed_config_.max_deceleration ||

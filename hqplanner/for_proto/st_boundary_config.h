@@ -1,14 +1,14 @@
 #ifndef HQPLANNER_FORPROTO_ST_BOUNDARY_CONFIG_H_
 #define HQPLANNER_FORPROTO_ST_BOUNDARY_CONFIG_H_
-#include
+
 namespace hqplanner {
 namespace forproto {
 struct StBoundaryConfig {
   double boundary_buffer = 0.1;
-  double high_speed_centric_acceleration_limit = 1.2;
-  double low_speed_centric_acceleration_limit = 1.4;
-  double high_speed_threshold = 20.0;
-  double low_speed_threshold = 7.0;
+  double high_speed_centric_acceleration_limit = 0.8;
+  double low_speed_centric_acceleration_limit = 1.2;
+  double high_speed_threshold = 12.58;
+  double low_speed_threshold = 7.5;
   double minimal_kappa = 0.00001;
   double point_extension = 1.0;
   double lowest_speed = 2.5;

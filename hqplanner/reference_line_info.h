@@ -216,6 +216,10 @@ bool ReferenceLineInfo::Init(const std::vector<const Obstacle*>& obstacles) {
     return false;
   }
 
+  // 添加速度限制
+  auto ref_line = reference_line_.GetReferenceLinePoints();
+  reference_line_.AddSpeedLimit(ref_line.front().s, ref_line.back().s,
+                                ConfigParam::FLAGS_planning_upper_speed_limit);
   // if (hdmap::GetSpeedControls()) {
   //   auto* speed_controls = hdmap::GetSpeedControls();
   //   for (const auto& speed_control : speed_controls->speed_control()) {

@@ -64,7 +64,7 @@ const double ConfigParam::FLAGS_max_stop_distance_obstacle = 10.0;
 const double ConfigParam::FLAGS_min_stop_distance_obstacle = 6.0;
 const bool ConfigParam::FLAGS_enable_nudge_decision = true;
 const double ConfigParam::FLAGS_nudge_distance_obstacle = 0.5;
-const double ConfigParam::FLAGS_planning_upper_speed_limit = 31.3;
+const double ConfigParam::FLAGS_planning_upper_speed_limit = 16.66667;
 const bool ConfigParam::FLAGS_enable_nudge_slowdown = true;
 const bool ConfigParam::FLAGS_enable_side_vehicle_st_boundary = false;
 }  // namespace forproto
