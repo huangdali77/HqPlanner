@@ -1,6 +1,6 @@
 #ifndef HQPLANNER_PATH_OBSTACLE_H_
 #define HQPLANNER_PATH_OBSTACLE_H_
-// #include "hqplanner/for_proto/vehicle_config_helper.h"
+
 #include <list>
 #include <string>
 #include <unordered_map>

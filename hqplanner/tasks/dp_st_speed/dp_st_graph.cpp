@@ -87,6 +87,8 @@ bool DpStGraph::Search(SpeedData* const speed_data) {
     }
   }
 
+  // 当没有obstacle st boundary的时候速度为1m/s????????
+
   if (st_graph_data_.st_boundaries().empty()) {
     // ADEBUG << "No path obstacles, dp_st_graph output default speed profile.";
     std::vector<SpeedPoint> speed_profile;
@@ -180,6 +182,7 @@ bool DpStGraph::CalculateTotalCost() {
       if (cost_cr.total_cost() < std::numeric_limits<float>::infinity()) {
         int h_r = 0;
         int l_r = 0;
+        // 使用最大加减速度向后扩展
         GetRowRange(cost_cr, &h_r, &l_r);
         highest_row = std::max(highest_row, h_r);
         lowest_row = std::min(lowest_row, l_r);
@@ -337,6 +340,7 @@ void DpStGraph::CalculateCostAt(const uint32_t c, const uint32_t r) {
 bool DpStGraph::RetrieveSpeedProfile(SpeedData* const speed_data) {
   float min_cost = std::numeric_limits<float>::infinity();
   const StGraphPoint* best_end_point = nullptr;
+  // 结束时间相同，距离不同
   for (const StGraphPoint& cur_point : cost_table_.back()) {
     if (!std::isinf(cur_point.total_cost()) &&
         cur_point.total_cost() < min_cost) {
@@ -344,7 +348,7 @@ bool DpStGraph::RetrieveSpeedProfile(SpeedData* const speed_data) {
       min_cost = cur_point.total_cost();
     }
   }
-
+  // 结束距离相同，结束时间不同
   for (const auto& row : cost_table_) {
     const StGraphPoint& cur_point = row.back();
     if (!std::isinf(cur_point.total_cost()) &&

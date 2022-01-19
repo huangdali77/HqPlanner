@@ -83,6 +83,7 @@ bool DPRoadGraph::FindPathTunnel(
   }
   FrenetFramePath tunnel(frenet_path);
   path_data->SetReferenceLine(&reference_line_);
+  //设置path_data中的frenet_path_和discretized_path_
   path_data->SetFrenetPath(tunnel);
   return true;
 }

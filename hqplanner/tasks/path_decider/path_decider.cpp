@@ -18,6 +18,7 @@
 #include "hqplanner/speed/st_boundary.h"
 namespace hqplanner {
 namespace tasks {
+using hqplanner::forproto::ObjectDecisionType;
 using hqplanner::forproto::ObjectNudge;
 using hqplanner::forproto::ObjectStop;
 using hqplanner::forproto::StopReasonCode;

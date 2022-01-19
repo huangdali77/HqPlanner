@@ -36,6 +36,15 @@ struct ConfigParam {
   static const double FLAGS_planning_upper_speed_limit;
   static const bool FLAGS_enable_nudge_slowdown;
   static const bool FLAGS_enable_side_vehicle_st_boundary;
+
+  // stop distance from stop line
+  static const double FLAGS_stop_line_stop_distance;
+  // min following time in st region before considering a valid follow
+  static const double FLAGS_follow_min_time_sec;
+  // follow time buffer (in second) to calculate the following distance
+  static const double FLAGS_follow_time_buffer;
+  // min follow distance for vehicles/bicycles/moving objects
+  static const double FLAGS_follow_min_distance;
 };
 
 const double ConfigParam::FLAGS_st_max_s = 40.0;
@@ -67,6 +76,11 @@ const double ConfigParam::FLAGS_nudge_distance_obstacle = 0.5;
 const double ConfigParam::FLAGS_planning_upper_speed_limit = 16.66667;
 const bool ConfigParam::FLAGS_enable_nudge_slowdown = true;
 const bool ConfigParam::FLAGS_enable_side_vehicle_st_boundary = false;
+const double ConfigParam::FLAGS_stop_line_stop_distance = 1.0;
+const double ConfigParam::FLAGS_follow_min_time_sec = 5.0;
+const double ConfigParam::FLAGS_follow_time_buffer = 2.5;
+const double ConfigParam::FLAGS_follow_min_distance = 3.0;
+
 }  // namespace forproto
 }  // namespace hqplanner
 
