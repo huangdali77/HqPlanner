@@ -141,7 +141,7 @@ class PathObstacle {
   hqplanner::forproto::ObjectDecisionType lateral_decision_;
   hqplanner::forproto::ObjectDecisionType longitudinal_decision_;
   // VehicleParam adc_param_;
-  bool is_blocking_obstacle_ = false;
+  bool is_blocking_obstacle_ = true;
   double min_radius_stop_distance_ = -1.0;
   // ConfigParam config_param_;
 };

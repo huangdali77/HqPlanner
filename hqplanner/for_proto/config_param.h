@@ -45,6 +45,10 @@ struct ConfigParam {
   static const double FLAGS_follow_time_buffer;
   // min follow distance for vehicles/bicycles/moving objects
   static const double FLAGS_follow_min_distance;
+  // min yield distance for vehicles/moving objects
+  static const double FLAGS_yield_distance;
+  // min yield distance for pedestrians/bicycles
+  static const double FLAGS_yield_distance_pedestrian_bycicle;
 };
 
 const double ConfigParam::FLAGS_st_max_s = 40.0;
@@ -80,7 +84,8 @@ const double ConfigParam::FLAGS_stop_line_stop_distance = 1.0;
 const double ConfigParam::FLAGS_follow_min_time_sec = 5.0;
 const double ConfigParam::FLAGS_follow_time_buffer = 2.5;
 const double ConfigParam::FLAGS_follow_min_distance = 3.0;
-
+const double ConfigParam::FLAGS_yield_distance = 3.0;
+const double ConfigParam::FLAGS_yield_distance_pedestrian_bycicle = 5.0;
 }  // namespace forproto
 }  // namespace hqplanner
 

@@ -232,6 +232,9 @@ bool PathData::SLToXY(const FrenetFramePath &frenet_path,
     path_point.ddkappa = 0;
 
     if (path_points.empty()) {
+      //   frenet_path_中的s是frenet坐标系中的真实s坐标，
+      //  discretized_path_中的s是是以局部规划得到的路径起点为原点的累计距离
+
       path_point.s = 0.0;
       path_point.dkappa = 0.0;
     } else {

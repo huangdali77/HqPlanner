@@ -1,9 +1,6 @@
-// #include "modules/planning/math/curve1d/quintic_polynomial_curve1d.h"
 #include "hqplanner/math/curve1d/quintic_polynomial_curve1d.h"
 
 #include <assert.h>
-// #include "modules/common/log.h"
-// #include "modules/common/util/string_util.h"
 
 namespace hqplanner {
 namespace math {

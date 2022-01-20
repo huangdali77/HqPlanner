@@ -181,7 +181,8 @@ bool SpeedDecider::MakeObjectDecision(const SpeedData& speed_profile,
       case ABOVE:
         if (boundary.boundary_type() == StBoundary::BoundaryType::KEEP_CLEAR) {
           ObjectDecisionType ignore;
-          ignore.mutable_ignore();
+          ignore.object_tag = ObjectDecisionType::ObjectTag::IGNORE;
+
           path_obstacle->AddLongitudinalDecision("dp_st_graph", ignore);
         } else {
           // OVERTAKE decision
@@ -195,24 +196,25 @@ bool SpeedDecider::MakeObjectDecision(const SpeedData& speed_profile,
       case CROSS:
         if (obstacle->IsBlockingObstacle()) {
           ObjectDecisionType stop_decision;
-          if (CreateStopDecision(*path_obstacle, &stop_decision,
-                                 -FLAGS_min_stop_distance_obstacle)) {
+          if (CreateStopDecision(
+                  *path_obstacle, &stop_decision,
+                  -ConfigParam::FLAGS_min_stop_distance_obstacle)) {
             path_obstacle->AddLongitudinalDecision("dp_st_graph/cross",
                                                    stop_decision);
           }
-          const std::string msg =
-              "Failed to find a solution for crossing obstacle:" +
-              obstacle->Id();
-          AERROR << msg;
-          return Status(ErrorCode::PLANNING_ERROR, msg);
+          // const std::string msg =
+          //     "Failed to find a solution for crossing obstacle:" +
+          //     obstacle->Id();
+          // AERROR << msg;
+          return false;
         }
         break;
       default:
-        AERROR << "Unknown position:" << position;
+        // AERROR << "Unknown position:" << position;
     }
     AppendIgnoreDecision(path_obstacle);
   }
-  return Status::OK();
+  return true;
 }
 
 void SpeedDecider::AppendIgnoreDecision(PathObstacle* path_obstacle) const {
@@ -305,18 +307,18 @@ bool SpeedDecider::CreateFollowDecision(
 bool SpeedDecider::CreateYieldDecision(
     const PathObstacle& path_obstacle,
     ObjectDecisionType* const yield_decision) const {
-  DCHECK_NOTNULL(yield_decision);
+  assert(yield_decision != nullptr);
 
   PerceptionObstacle::Type obstacle_type =
-      path_obstacle.obstacle()->Perception().type();
-  double yield_distance = FLAGS_yield_distance;
+      path_obstacle.obstacle()->Perception().type;
+  double yield_distance = ConfigParam::FLAGS_yield_distance;
   switch (obstacle_type) {
     case PerceptionObstacle::PEDESTRIAN:
     case PerceptionObstacle::BICYCLE:
-      yield_distance = FLAGS_yield_distance_pedestrian_bycicle;
+      yield_distance = ConfigParam::FLAGS_yield_distance_pedestrian_bycicle;
       break;
     default:
-      yield_distance = FLAGS_yield_distance;
+      yield_distance = ConfigParam::FLAGS_yield_distance;
       break;
   }
 
@@ -325,27 +327,27 @@ bool SpeedDecider::CreateYieldDecision(
       std::max(-obstacle_boundary.min_s(), -yield_distance);
 
   const double reference_line_fence_s =
-      adc_sl_boundary_.end_s() + obstacle_boundary.min_s() + yield_distance_s;
+      adc_sl_boundary_.end_s + obstacle_boundary.min_s() + yield_distance_s;
   const double main_stop_s =
       reference_line_info_->path_decision()->stop_reference_line_s();
   if (main_stop_s < reference_line_fence_s) {
-    ADEBUG << "Yield reference_s is further away, ignore.";
+    // ADEBUG << "Yield reference_s is further away, ignore.";
     return false;
   }
 
   auto ref_point = reference_line_->GetReferencePoint(reference_line_fence_s);
 
   // set YIELD decision
-  auto* yield = yield_decision->mutable_yield();
-  yield->set_distance_s(yield_distance_s);
-  yield->mutable_fence_point()->set_x(ref_point.x());
-  yield->mutable_fence_point()->set_y(ref_point.y());
-  yield->mutable_fence_point()->set_z(0.0);
-  yield->set_fence_heading(ref_point.heading());
+  yield_decision->object_tag = ObjectDecisionType::ObjectTag::YIELD;
+  yield_decision->yield_.distance_s = yield_distance_s;
+  yield_decision->yield_.fence_point.x = ref_point.x;
+  yield_decision->yield_.fence_point.y = ref_point.y;
+  yield_decision->yield_.fence_point.z = 0;
+  yield_decision->yield_.fence_heading = ref_point.heading;
 
-  ADEBUG << "YIELD: obstacle_id[" << path_obstacle.obstacle()->Id()
-         << "] obstacle_type[" << PerceptionObstacle_Type_Name(obstacle_type)
-         << "]";
+  // ADEBUG << "YIELD: obstacle_id[" << path_obstacle.obstacle()->Id()
+  //        << "] obstacle_type[" << PerceptionObstacle_Type_Name(obstacle_type)
+  //        << "]";
 
   return true;
 }
@@ -353,45 +355,39 @@ bool SpeedDecider::CreateYieldDecision(
 bool SpeedDecider::CreateOvertakeDecision(
     const PathObstacle& path_obstacle,
     ObjectDecisionType* const overtake_decision) const {
-  DCHECK_NOTNULL(overtake_decision);
+  assert(overtake_decision != nullptr);
 
   constexpr double kOvertakeTimeBuffer = 3.0;    // in seconds
   constexpr double kMinOvertakeDistance = 10.0;  // in meters
 
-  const auto& velocity = path_obstacle.obstacle()->Perception().velocity();
+  const auto& velocity = path_obstacle.obstacle()->Perception().velocity;
   const double obstacle_speed =
-      common::math::Vec2d::CreateUnitVec2d(init_point_.path_point().theta())
-          .InnerProd(Vec2d(velocity.x(), velocity.y()));
+      hqplanner::math::Vec2d::CreateUnitVec2d(init_point_.path_point.theta)
+          .InnerProd(Vec2d(velocity.x, velocity.y));
 
-  const double overtake_distance_s = std::fmax(
-      std::fmax(init_point_.v(), obstacle_speed) * kOvertakeTimeBuffer,
-      kMinOvertakeDistance);
+  const double overtake_distance_s =
+      std::fmax(std::fmax(init_point_.v, obstacle_speed) * kOvertakeTimeBuffer,
+                kMinOvertakeDistance);
 
   const auto& boundary = path_obstacle.st_boundary();
   const double reference_line_fence_s =
-      adc_sl_boundary_.end_s() + boundary.min_s() + overtake_distance_s;
+      adc_sl_boundary_.end_s + boundary.min_s() + overtake_distance_s;
   const double main_stop_s =
       reference_line_info_->path_decision()->stop_reference_line_s();
   if (main_stop_s < reference_line_fence_s) {
-    ADEBUG << "Overtake reference_s is further away, ignore.";
+    // ADEBUG << "Overtake reference_s is further away, ignore.";
     return false;
   }
 
   auto ref_point = reference_line_->GetReferencePoint(reference_line_fence_s);
 
   // set OVERTAKE decision
-  auto* overtake = overtake_decision->mutable_overtake();
-  overtake->set_distance_s(overtake_distance_s);
-  overtake->mutable_fence_point()->set_x(ref_point.x());
-  overtake->mutable_fence_point()->set_y(ref_point.y());
-  overtake->mutable_fence_point()->set_z(0.0);
-  overtake->set_fence_heading(ref_point.heading());
-
-  PerceptionObstacle::Type obstacle_type =
-      path_obstacle.obstacle()->Perception().type();
-  ADEBUG << "OVERTAKE: obstacle_id[" << path_obstacle.obstacle()->Id()
-         << "] obstacle_type[" << PerceptionObstacle_Type_Name(obstacle_type)
-         << "]";
+  overtake_decision->object_tag = ObjectDecisionType::ObjectTag::OVERTAKE;
+  overtake_decision->overtake_.distance_s = overtake_distance_s;
+  overtake_decision->overtake_.fence_point.x = ref_point.x;
+  overtake_decision->overtake_.fence_point.y = ref_point.y;
+  overtake_decision->overtake_.fence_point.z = 0.0;
+  overtake_decision->overtake_.fence_heading = ref_point.heading;
 
   return true;
 }
