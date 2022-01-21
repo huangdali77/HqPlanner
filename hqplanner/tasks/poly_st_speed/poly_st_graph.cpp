@@ -17,11 +17,12 @@ namespace {
 constexpr double kEpsilon = 1e-6;
 }
 using hqplanner::PathObstacle;
+using hqplanner::ReferenceLineInfo;
 using hqplanner::forproto::PolyStSpeedConfig;
 using hqplanner::math::QuarticPolynomialCurve1d;
+using hqplanner::speed::SpeedData;
 using hqplanner::speed::SpeedLimit;
 using hqplanner::speed::STPoint;
-
 PolyStGraph::PolyStGraph(const PolyStSpeedConfig &config,
                          const ReferenceLineInfo *reference_line_info,
                          const SpeedLimit &speed_limit)
@@ -106,6 +107,9 @@ bool PolyStGraph::SampleStPoints(
   //   CHECK_NOTNULL(points);
   constexpr double start_t = 6.0;
   constexpr double start_s = 0.0;
+
+  // constexpr double start_t = 0.0;
+  // constexpr double start_s = 6.0;
   for (double t = start_t; t <= planning_time_; t += unit_t_) {
     std::vector<STPoint> level_points;
     for (double s = start_s; s < planning_distance_ + kEpsilon; s += unit_s_) {

@@ -112,25 +112,25 @@ bool PathObstacle::BuildTrajectoryStBoundary(ReferenceLine& reference_line,
     SLBoundary object_boundary;
     // NOTICE: this method will have errors when the reference line is not
     // straight. Need double loop to cover all corner cases.
+    // ??????????????????
+    // const double distance_dx = trajectory_points[last_index].path_point.x -
+    //                            trajectory_points[i].path_point.x;
+    // const double distance_dy = trajectory_points[last_index].path_point.y -
+    //                            trajectory_points[i].path_point.y;
+    // const double distance_xy = std::hypot(distance_dx, distance_dy);
 
-    const double distance_dx = trajectory_points[last_index].path_point.x -
-                               trajectory_points[i].path_point.x;
-    const double distance_dy = trajectory_points[last_index].path_point.y -
-                               trajectory_points[i].path_point.y;
-    const double distance_xy = std::hypot(distance_dx, distance_dy);
+    // if (last_sl_boundary.start_l > distance_xy ||
+    //     last_sl_boundary.end_l < -distance_xy) {
+    //   continue;
+    // }
 
-    if (last_sl_boundary.start_l > distance_xy ||
-        last_sl_boundary.end_l < -distance_xy) {
-      continue;
-    }
-
-    const double mid_s =
-        (last_sl_boundary.start_s + last_sl_boundary.end_s) / 2.0;
-    const double start_s = std::fmax(0.0, mid_s - 2.0 * distance_xy);
-    const double end_s = (i == 1) ? reference_line.Length()
-                                  : std::fmin(reference_line.Length(),
-                                              mid_s + 2.0 * distance_xy);
-
+    // const double mid_s =
+    //     (last_sl_boundary.start_s + last_sl_boundary.end_s) / 2.0;
+    // const double start_s = std::fmax(0.0, mid_s - 2.0 * distance_xy);
+    // const double end_s = (i == 1) ? reference_line.Length()
+    //                               : std::fmin(reference_line.Length(),
+    //                                           mid_s + 2.0 * distance_xy);
+    // ??????????????????
     if (!reference_line.GetApproximateSLBoundary(object_moving_box,
                                                  &object_boundary)) {
       // AERROR << "failed to calculate boundary";
@@ -165,9 +165,11 @@ bool PathObstacle::BuildTrajectoryStBoundary(ReferenceLine& reference_line,
             : kStBoundaryDeltaS;
     const double object_s_diff =
         object_boundary.end_s - object_boundary.start_s;
-    if (object_s_diff < st_boundary_delta_s) {
-      continue;
-    }
+    // ??????????????????
+    // if (object_s_diff < st_boundary_delta_s) {
+    //   continue;
+    // }
+    // ??????????????????
     const double delta_t =
         second_traj_point.relative_time - first_traj_point.relative_time;
     double low_s = std::max(object_boundary.start_s - adc_half_length, 0.0);

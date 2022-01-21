@@ -49,6 +49,8 @@ struct ConfigParam {
   static const double FLAGS_yield_distance;
   // min yield distance for pedestrians/bicycles
   static const double FLAGS_yield_distance_pedestrian_bycicle;
+
+  static const std::string FLAGS_destination_obstacle_id;
 };
 
 const double ConfigParam::FLAGS_st_max_s = 40.0;
@@ -86,6 +88,7 @@ const double ConfigParam::FLAGS_follow_time_buffer = 2.5;
 const double ConfigParam::FLAGS_follow_min_distance = 3.0;
 const double ConfigParam::FLAGS_yield_distance = 3.0;
 const double ConfigParam::FLAGS_yield_distance_pedestrian_bycicle = 5.0;
+const std::string ConfigParam::FLAGS_destination_obstacle_id = "DEST";
 }  // namespace forproto
 }  // namespace hqplanner
 

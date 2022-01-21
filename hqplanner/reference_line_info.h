@@ -14,6 +14,7 @@
 #include "for_proto/sl_boundary.h"
 #include "for_proto/vehicle_config.h"
 #include "for_proto/vehicle_state.h"
+#include "hqplanner/for_proto/decision.h"
 #include "hqplanner/for_proto/vehicle_config_helper.h"
 #include "path/path_data.h"
 #include "path_decision.h"
@@ -22,6 +23,7 @@
 #include "trajectory/discretized_trajectory.h"
 namespace hqplanner {
 using hqplanner::PathDecision;
+using hqplanner::forproto::ObjectDecisionType;
 using hqplanner::forproto::PathPoint;
 using hqplanner::forproto::SLBoundary;
 using hqplanner::forproto::SpeedPoint;
@@ -211,7 +213,7 @@ bool ReferenceLineInfo::Init(const std::vector<const Obstacle*>& obstacles) {
     // AERROR << "Ego vehicle is too far away from reference line.";
     return false;
   }
-
+  is_on_reference_line_ = reference_line_.IsOnRoad(adc_sl_boundary_);
   if (!AddObstacles(obstacles)) {
     return false;
   }
@@ -263,6 +265,20 @@ PathObstacle* ReferenceLineInfo::AddObstacle(const Obstacle* obstacle) {
   }
   path_obstacle->SetPerceptionSlBoundary(perception_sl);
 
+  if (path_obstacle->Id() == ConfigParam::FLAGS_destination_obstacle_id) {
+    const double fence_s =
+        perception_sl.start_s - ConfigParam::FLAGS_stop_line_stop_distance;
+    const auto fence_point = reference_line_.GetReferencePoint(fence_s);
+    ObjectDecisionType stop_decision;
+    stop_decision.object_tag = ObjectDecisionType::STOP;
+
+    stop_decision.stop_.distance_s =
+        -ConfigParam::FLAGS_stop_line_stop_distance;
+    stop_decision.stop_.stop_point.x = fence_point.x;
+    stop_decision.stop_.stop_point.y = fence_point.y;
+    stop_decision.stop_.stop_point.z = 0.0;
+    stop_decision.stop_.stop_heading = fence_point.heading;
+  }
   // if (IsUnrelaventObstacle(path_obstacle)) {
   //   ObjectDecisionType ignore;
   //   ignore.mutable_ignore();
@@ -379,6 +395,26 @@ bool ReferenceLineInfo::CombinePathAndSpeedProfile(
   return true;
 }
 bool ReferenceLineInfo::IsDrivable() const { return is_drivable_; }
+
+bool ReferenceLineInfo::ReachedDestination() const {
+  constexpr double kDestinationDeltaS = 0.05;
+  const auto* dest_ptr =
+      path_decision_.Find(ConfigParam::FLAGS_destination_obstacle_id);
+  if (!dest_ptr) {
+    return false;
+  }
+  if (!dest_ptr->LongitudinalDecision().has_stop()) {
+    return false;
+  }
+  if (!reference_line_.IsOnRoad(
+          dest_ptr->obstacle()->PerceptionBoundingBox().center())) {
+    return false;
+  }
+  const double stop_s = dest_ptr->PerceptionSLBoundary().start_s +
+                        dest_ptr->LongitudinalDecision().stop().distance_s;
+  return adc_sl_boundary_.end_s + kDestinationDeltaS > stop_s;
+}
+
 }  // namespace hqplanner
 
 #endif

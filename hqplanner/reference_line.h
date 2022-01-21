@@ -69,6 +69,14 @@ class ReferenceLine {
   double GetSpeedLimitFromS(const double s) const;
   void AddSpeedLimit(double start_s, double end_s, double speed_limit);
 
+  bool IsOnRoad(const SLPoint& sl_point) const;
+  bool IsOnRoad(const hqplanner::math::Vec2d& vec2d_point) const;
+  template <class XYPoint>
+  bool IsOnRoad(const XYPoint& xy) const {
+    return IsOnRoad(common::math::Vec2d(xy.x(), xy.y()));
+  }
+  bool IsOnRoad(const SLBoundary& sl_boundary) const;
+
  private:
   std::vector<AnchorPoint> anchor_points_;
   std::vector<double> anchor_points_x_;
@@ -469,6 +477,50 @@ void ReferenceLine::AddSpeedLimit(double start_s, double end_s,
                                   double speed_limit) {
   // assume no overlaps between speed limit regions.
   speed_limit_.emplace_back(start_s, end_s, speed_limit);
+}
+
+bool ReferenceLine::IsOnRoad(const hqplanner::math::Vec2d& vec2d_point) const {
+  SLPoint sl_point;
+  if (!XYToSL(vec2d_point, &sl_point)) {
+    return false;
+  }
+  return IsOnRoad(sl_point);
+}
+
+bool ReferenceLine::IsOnRoad(const SLBoundary& sl_boundary) const {
+  if (sl_boundary.end_s < 0 ||
+      sl_boundary.start_s > reference_line_points_.back().s) {
+    return false;
+  }
+  double middle_s = (sl_boundary.start_s + sl_boundary.end_s) / 2.0;
+  double lane_left_width = 0.0;
+  double lane_right_width = 0.0;
+
+  if (!GetLaneWidth(middle_s, &lane_left_width, &lane_right_width)) {
+    return false;
+  }
+
+  return !(sl_boundary.start_l > lane_left_width ||
+           sl_boundary.end_l < -lane_right_width);
+}
+
+// bool ReferenceLine::IsBlockRoad(const common::math::Box2d& box2d,
+//                                 double gap) const {
+//   return map_path_.OverlapWith(box2d, gap);
+// }
+
+bool ReferenceLine::IsOnRoad(const SLPoint& sl_point) const {
+  if (sl_point.s <= 0 || sl_point.s > reference_line_points_.back().s) {
+    return false;
+  }
+  double left_width = 0.0;
+  double right_width = 0.0;
+
+  if (!GetLaneWidth(sl_point.s, &left_width, &right_width)) {
+    return false;
+  }
+
+  return !(sl_point.l < -right_width || sl_point.l > left_width);
 }
 
 // =======================备用方案=============================================

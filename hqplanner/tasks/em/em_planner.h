@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include "hqplanner/for_proto/planning_config.h"
+#include "hqplanner/for_proto/pnc_point.h"
 #include "hqplanner/math/curve1d/quintic_polynomial_curve1d.h"
 #include "hqplanner/reference_line.h"
 #include "hqplanner/reference_line_info.h"
